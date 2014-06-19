@@ -31,6 +31,10 @@
     "labels": {
       "type": "object",
       "required": false
+    },
+    "selector": {
+      "type": "object",
+      "required": false
     }
     "selector": {
       "type": "object",
