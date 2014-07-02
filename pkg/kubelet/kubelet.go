@@ -30,6 +30,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/api"
@@ -73,15 +74,8 @@ type CadvisorInterface interface {
 	MachineInfo() (*info.MachineInfo, error)
 }
 
-type ContainerId struct {
-	ManifestId string
-	Name       string
-}
-
 func New() *Kubelet {
-	return &Kubelet{
-		containersBeingCreated: make(map[ContainerId]struct{}, 8),
-	}
+	return &Kubelet{}
 }
 
 // The main kubelet implementation
@@ -94,8 +88,7 @@ type Kubelet struct {
 	FileCheckFrequency time.Duration
 	SyncFrequency      time.Duration
 	HTTPCheckFrequency time.Duration
-	// Containers being created.
-	containersBeingCreated map[ContainerId]struct{}
+	pullLock           sync.Mutex
 }
 
 type manifestUpdate struct {
@@ -651,16 +644,6 @@ func (kl *Kubelet) createNetworkContainer(manifest *api.ContainerManifest) (Dock
 }
 
 func (kl *Kubelet) syncManifest(manifest *api.ContainerManifest, keepChannel chan<- DockerId) error {
-
-	// Mark all containers as being created
-	for _, manifest := range config {
-		for _, container := range manifest.Containers {
-			kl.containersBeingCreated[ContainerId{
-				ManifestId: manifest.Id,
-				Name:       container.Name,
-			}] = struct{}{}
-		}
-	}
 	// Make sure we have a network container
 	netId, err := kl.getNetworkContainerId(manifest)
 	if err != nil {
@@ -710,6 +693,16 @@ func (kl *Kubelet) SyncManifests(config []api.ContainerManifest) error {
 	dockerIdsToKeep := map[DockerId]bool{}
 	keepChannel := make(chan DockerId)
 	waitGroup := sync.WaitGroup{}
+
+	// Mark all containers as being created
+	for _, manifest := range config {
+		for _, container := range manifest.Containers {
+			kl.containersBeingCreated[ContainerId{
+				ManifestId: manifest.ID,
+				Name:       container.Name,
+			}] = struct{}{}
+		}
+	}
 
 	// Check for any containers that need starting
 	for _, manifest := range config {
