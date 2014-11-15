@@ -26,12 +26,13 @@ import (
 
 // FakeCloud is a test-double implementation of Interface, TCPLoadBalancer and Instances. It is useful for testing.
 type FakeCloud struct {
-	Exists        bool
-	Err           error
-	Calls         []string
-	IP            net.IP
-	Machines      []string
-	NodeResources *api.NodeResources
+	Exists             bool
+	Err                error
+	Calls              []string
+	IP                 net.IP
+	Machines           []string
+	NodeResources      *api.NodeResources
+	InstanceTypesValue map[string]api.NodeResources
 
 	cloudprovider.Zone
 }
@@ -117,4 +118,14 @@ func (f *FakeCloud) GetZone() (cloudprovider.Zone, error) {
 func (f *FakeCloud) GetNodeResources(name string) (*api.NodeResources, error) {
 	f.addCall("get-node-resources")
 	return f.NodeResources, f.Err
+}
+
+func (f *FakeCloud) Add(name, ipRange, instanceType string) error {
+	f.addCall("add")
+	return f.Err
+}
+
+func (f *FakeCloud) InstanceTypes() (map[string]api.NodeResources, error) {
+	f.addCall("instance-types")
+	return f.InstanceTypesValue, f.Err
 }
