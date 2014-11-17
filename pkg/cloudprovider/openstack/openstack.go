@@ -208,6 +208,14 @@ func (i *Instances) GetNodeResources(name string) (*api.NodeResources, error) {
 	return rsrc, nil
 }
 
+func (i *Instances) Add(name, ipRange, instanceType string) error {
+	return fmt.Errorf("Add() unimplemented")
+}
+
+func (i *Instances) InstanceTypes() (map[string]api.NodeResources, error) {
+	return nil, fmt.Errorf("InstanceTypes() unimplemented")
+}
+
 func (os *OpenStack) TCPLoadBalancer() (cloudprovider.TCPLoadBalancer, bool) {
 	return nil, false
 }

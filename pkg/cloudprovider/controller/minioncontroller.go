@@ -54,7 +54,12 @@ func NewMinionController(
 // Run starts syncing instances from cloudprovider periodically, or create initial minion list.
 func (s *MinionController) Run(period time.Duration) {
 	if s.cloud != nil && len(s.matchRE) > 0 {
-		go util.Forever(func() { s.Sync() }, period)
+		go util.Forever(func() {
+			err := s.Sync()
+			if err != nil {
+				glog.Warningf("Sync failed: %v", err)
+			}
+		}, period)
 	} else {
 		for _, minionID := range s.minions {
 			s.kubeClient.Minions().Create(&api.Minion{
@@ -84,14 +89,20 @@ func (s *MinionController) Sync() error {
 	for _, minion := range matches.Items {
 		if _, ok := minionMap[minion.Name]; !ok {
 			glog.Infof("Create minion in registry: %s", minion.Name)
-			s.kubeClient.Minions().Create(&minion)
+			_, err := s.kubeClient.Minions().Create(&minion)
+			if err != nil {
+				return fmt.Errorf("failed to create minion %q: %v", minion.Name, err)
+			}
 		}
 		delete(minionMap, minion.Name)
 	}
 
 	for minionID := range minionMap {
 		glog.Infof("Delete minion from registry: %s", minionID)
-		s.kubeClient.Minions().Delete(minionID)
+		err := s.kubeClient.Minions().Delete(minionID)
+		if err != nil {
+			return fmt.Errorf("failed to delete minion %q: %v", minionID, err)
+		}
 	}
 	return nil
 }
