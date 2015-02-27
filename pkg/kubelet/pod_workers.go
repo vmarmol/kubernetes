@@ -36,6 +36,7 @@ type podWorkers struct {
 	// Tracks all running per-pod goroutines - per-pod goroutine will be
 	// processing updates received through its corresponding channel.
 	podUpdates map[types.UID]chan api.BoundPod
+	isWorking  map[types.UID]bool
 	// DockerCache is used for listing running containers.
 	dockerCache dockertools.DockerCache
 
@@ -48,6 +49,7 @@ type podWorkers struct {
 func newPodWorkers(dockerCache dockertools.DockerCache, syncPodFun syncPodFunType) *podWorkers {
 	return &podWorkers{
 		podUpdates:  map[types.UID]chan api.BoundPod{},
+		isWorking:   map[types.UID]bool{},
 		dockerCache: dockerCache,
 		syncPodFun:  syncPodFun,
 	}
@@ -55,6 +57,10 @@ func newPodWorkers(dockerCache dockertools.DockerCache, syncPodFun syncPodFunTyp
 
 func (p *podWorkers) managePodLoop(podUpdates <-chan api.BoundPod) {
 	for newPod := range podUpdates {
+		p.podLock.Lock()
+		p.isWorking[newPod.UID] = true
+		p.podLock.Unlock()
+
 		// Since we use docker cache, getting current state shouldn't cause
 		// performance overhead on Docker. Moreover, as long as we run syncPod
 		// no matter if it changes anything, having an old version of "containers"
@@ -63,13 +69,16 @@ func (p *podWorkers) managePodLoop(podUpdates <-chan api.BoundPod) {
 		if err != nil {
 			glog.Errorf("Error listing containers while syncing pod: %v", err)
 			continue
+		} else {
+			err = p.syncPodFun(&newPod, containers)
+			if err != nil {
+				glog.Errorf("Error syncing pod %s, skipping: %v", newPod.UID, err)
+				record.Eventf(&newPod, "failedSync", "Error syncing pod, skipping: %v", err)
+			}
 		}
-		err = p.syncPodFun(&newPod, containers)
-		if err != nil {
-			glog.Errorf("Error syncing pod %s, skipping: %v", newPod.UID, err)
-			record.Eventf(&newPod, "failedSync", "Error syncing pod, skipping: %v", err)
-			continue
-		}
+		p.podLock.Lock()
+		p.isWorking[newPod.UID] = false
+		p.podLock.Unlock()
 	}
 }
 
@@ -84,9 +93,12 @@ func (p *podWorkers) UpdatePod(pod api.BoundPod) {
 		// TODO(wojtek-t): Adjust the size of the buffer in this channel
 		podUpdates = make(chan api.BoundPod, 5)
 		p.podUpdates[uid] = podUpdates
+		p.isWorking[uid] = true
 		go p.managePodLoop(podUpdates)
+		podUpdates <- pod
+	} else if !p.isWorking[uid] {
+		podUpdates <- pod
 	}
-	podUpdates <- pod
 }
 
 func (p *podWorkers) ForgetNonExistingPodWorkers(desiredPods map[types.UID]empty) {
