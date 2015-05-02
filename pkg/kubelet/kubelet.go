@@ -1376,7 +1376,11 @@ func (kl *Kubelet) GetKubeletContainerLogs(podFullName, containerName, tail stri
 		// waiting state.
 		return err
 	}
-	return kl.containerRuntime.GetContainerLogs(containerID, tail, follow, stdout, stderr)
+	pod, ok := kl.GetPodByFullName(podFullName)
+	if !ok {
+		return fmt.Errorf("unable to get logs for container %q in pod %q: unable to find pod", containerName, podFullName)
+	}
+	return kl.containerRuntime.GetContainerLogs(pod, containerID, tail, follow, stdout, stderr)
 }
 
 // GetHostname Returns the hostname as the kubelet sees it.
