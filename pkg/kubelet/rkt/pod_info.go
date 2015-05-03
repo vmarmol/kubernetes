@@ -132,7 +132,7 @@ func (p *podInfo) getContainerStatus(container *kubecontainer.Container) api.Con
 	case AbortedPrepare, Deleting, Exited, Garbage:
 		exitCode, ok := p.exitCodes[status.ImageID]
 		if !ok {
-			glog.Warningf("rkt: Cannot get exit code for container %v", container)
+			//glog.Warningf("rkt: Cannot get exit code for container %v", container)
 		}
 		exitCode = -1
 		status.State = api.ContainerState{
@@ -142,7 +142,7 @@ func (p *podInfo) getContainerStatus(container *kubecontainer.Container) api.Con
 			},
 		}
 	default:
-		glog.Warningf("rkt: Unknown pod state: %q", p.state)
+		glog.Warningf("rkt: Unknown pod state: %q for container %q with name %q", p.state, containerID, container.Name)
 	}
 	return status
 }
@@ -192,17 +192,20 @@ func (r *Runtime) getPodInfos() (map[string]*podInfo, error) {
 	//
 	// With '--no-legend', the first line is eliminated.
 	for _, line := range output {
+		if line == "" {
+			continue
+		}
 		tuples := splitLineByTab(line)
-		if len(tuples) < 3 { // At least it should have 3 entries.
-			glog.Warningf("rkt: Unrecognized line: %q", line)
+		if len(tuples) < 2 { // At least it should have 3 entries.
+			//glog.Warningf("rkt: Unrecognized line: %q (%d:%v) %v", line, len(tuples), tuples, output)
 			continue
 		}
 		id := tuples[0]
 
 		status, err := r.runCommand("status", id)
 		if err != nil {
-			glog.Errorf("rkt: Cannot get status for pod (uuid=%q): %v", id, err)
-			continue
+			//glog.Warningf("rkt: Cannot get status for pod (uuid=%q): %v", id, err)
+			//continue
 		}
 		info, err := parsePodInfo(status)
 		if err != nil {
