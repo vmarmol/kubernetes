@@ -75,11 +75,11 @@ func (ur *unsupportedRuntime) PortForward(pod *kubecontainer.Pod, port uint16, s
 	return unsupportedError
 }
 
-func (ur *unsupportedRuntime) PullImage(image string) error {
+func (ur *unsupportedRuntime) PullImage(image kubecontainer.ImageSpec) error {
 	return unsupportedError
 }
 
-func (ur *unsupportedRuntime) IsImagePresent(image string) (bool, error) {
+func (ur *unsupportedRuntime) IsImagePresent(image kubecontainer.ImageSpec) (bool, error) {
 	return false, unsupportedError
 }
 
@@ -87,7 +87,7 @@ func (ur *unsupportedRuntime) ListImages() ([]kubecontainer.Image, error) {
 	return []kubecontainer.Image{}, unsupportedError
 }
 
-func (ur *unsupportedRuntime) RemoveImage(image string) error {
+func (ur *unsupportedRuntime) RemoveImage(image kubecontainer.ImageSpec) error {
 	return unsupportedError
 }
 
