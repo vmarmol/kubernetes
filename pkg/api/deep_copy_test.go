@@ -91,3 +91,26 @@ func BenchmarkReplicationControllerCopy(b *testing.B) {
 		b.Fatalf("Incorrect copy: expected %v, got %v", replicationController, *result)
 	}
 }
+
+func BenchmarkDaemonControllerCopy(b *testing.B) {
+	data, err := ioutil.ReadFile("daemon_controller_example.json")
+	if err != nil {
+		b.Fatalf("Unexpected error while reading file: %v", err)
+	}
+	var daemonController api.DaemonController
+	if err := api.Scheme.DecodeInto(data, &daemonController); err != nil {
+		b.Fatalf("Unexpected error decoding node: %v", err)
+	}
+
+	var result *api.DaemonController
+	for i := 0; i < b.N; i++ {
+		obj, err := api.Scheme.DeepCopy(&daemonController)
+		if err != nil {
+			b.Fatalf("Unexpected error copying daemon controller: %v", err)
+		}
+		result = obj.(*api.DaemonController)
+	}
+	if !api.Semantic.DeepEqual(daemonController, *result) {
+		b.Fatalf("Incorrect copy: expected %v, got %v", daemonController, *result)
+	}
+}

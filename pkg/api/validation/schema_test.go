@@ -63,6 +63,7 @@ func TestValidateOk(t *testing.T) {
 		{obj: &api.Pod{}},
 		{obj: &api.Service{}},
 		{obj: &api.ReplicationController{}},
+		{obj: &api.DaemonController{}},
 	}
 
 	seed := rand.Int63()
@@ -71,6 +72,7 @@ func TestValidateOk(t *testing.T) {
 		for _, test := range tests {
 			testObj := test.obj
 			apiObjectFuzzer.Fuzz(testObj)
+
 			data, err := testapi.Codec().Encode(testObj)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
