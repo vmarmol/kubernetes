@@ -225,6 +225,29 @@ func (s *StoreToControllerLister) GetPodControllers(pod *api.Pod) (controllers [
 	return
 }
 
+// StoreToDaemonControllerLister gives a store List and Exists methods. The store must contain only DaemonControllers.
+type StoreToDaemonControllerLister struct {
+	Store
+}
+
+// Exists checks if the given dc exists in the store.
+func (s *StoreToDaemonControllerLister) Exists(controller *api.DaemonController) (bool, error) {
+	_, exists, err := s.Store.Get(controller)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+// StoreToDaemonControllerLister lists all controllers in the store.
+// TODO: converge on the interface in pkg/client
+func (s *StoreToDaemonControllerLister) List() (controllers []api.DaemonController, err error) {
+	for _, c := range s.Store.List() {
+		controllers = append(controllers, *(c.(*api.DaemonController)))
+	}
+	return controllers, nil
+}
+
 // StoreToServiceLister makes a Store that has the List method of the client.ServiceInterface
 // The Store must contain (only) Services.
 type StoreToServiceLister struct {

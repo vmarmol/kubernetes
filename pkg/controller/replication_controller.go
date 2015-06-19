@@ -204,7 +204,6 @@ func (rm *ReplicationManager) getPodControllers(pod *api.Pod) *api.ReplicationCo
 
 // When a pod is created, enqueue the controller that manages it and update it's expectations.
 func (rm *ReplicationManager) addPod(obj interface{}) {
-	glog.Infoln("RM detected pod addition")
 	pod := obj.(*api.Pod)
 	if rc := rm.getPodControllers(pod); rc != nil {
 		rm.expectations.CreationObserved(rc)

@@ -26,6 +26,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/client/cache"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/client/record"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/labels"
+	"github.com/GoogleCloudPlatform/kubernetes/pkg/runtime"
 	"github.com/golang/glog"
 	"sync/atomic"
 )
@@ -200,6 +201,8 @@ func NewRCExpectations() *RCExpectations {
 type PodControlInterface interface {
 	// createReplica creates new replicated pods according to the spec.
 	createReplica(namespace string, controller *api.ReplicationController) error
+	// createReplicaOnNodes creates a new pod according to the spec, on a specified list of nodes.
+	createReplicaOnNodes(namespace string, controller *api.DaemonController, nodeNames []string) error
 	// deletePod deletes the pod identified by podID.
 	deletePod(namespace string, podID string) error
 }
@@ -210,34 +213,49 @@ type RealPodControl struct {
 	recorder   record.EventRecorder
 }
 
-func (r RealPodControl) createReplica(namespace string, controller *api.ReplicationController) error {
+func getReplicaLabelSet(template *api.PodTemplateSpec) labels.Set {
 	desiredLabels := make(labels.Set)
-	for k, v := range controller.Spec.Template.Labels {
+	for k, v := range template.Labels {
 		desiredLabels[k] = v
 	}
+	return desiredLabels
+}
+
+func getReplicaAnnotationSet(template *api.PodTemplateSpec, object runtime.Object) (labels.Set, error) {
 	desiredAnnotations := make(labels.Set)
-	for k, v := range controller.Spec.Template.Annotations {
+	for k, v := range template.Annotations {
 		desiredAnnotations[k] = v
 	}
-
-	createdByRef, err := api.GetReference(controller)
+	createdByRef, err := api.GetReference(object)
 	if err != nil {
-		return fmt.Errorf("unable to get controller reference: %v", err)
+		return desiredAnnotations, fmt.Errorf("unable to get controller reference: %v", err)
 	}
 	createdByRefJson, err := latest.Codec.Encode(&api.SerializedReference{
 		Reference: *createdByRef,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to serialize controller reference: %v", err)
+		return desiredAnnotations, fmt.Errorf("unable to serialize controller reference: %v", err)
 	}
-
 	desiredAnnotations[CreatedByAnnotation] = string(createdByRefJson)
+	return desiredAnnotations, nil
+}
 
+func getReplicaPrefix(controllerName string) string {
 	// use the dash (if the name isn't too long) to make the pod name a bit prettier
-	prefix := fmt.Sprintf("%s-", controller.Name)
+	prefix := fmt.Sprintf("%s-", controllerName)
 	if ok, _ := validation.ValidatePodName(prefix, true); !ok {
-		prefix = controller.Name
+		prefix = controllerName
 	}
+	return prefix
+}
+
+func (r RealPodControl) createReplica(namespace string, controller *api.ReplicationController) error {
+	desiredLabels := getReplicaLabelSet(controller.Spec.Template)
+	desiredAnnotations, err := getReplicaAnnotationSet(controller.Spec.Template, controller)
+	if err != nil {
+		return err
+	}
+	prefix := getReplicaPrefix(controller.Name)
 
 	pod := &api.Pod{
 		ObjectMeta: api.ObjectMeta{
@@ -259,6 +277,43 @@ func (r RealPodControl) createReplica(namespace string, controller *api.Replicat
 		glog.V(4).Infof("Controller %v created pod %v", controller.Name, newPod.Name)
 		r.recorder.Eventf(controller, "successfulCreate", "Created pod: %v", newPod.Name)
 	}
+	return nil
+}
+
+func (r RealPodControl) createReplicaOnNodes(namespace string, controller *api.DaemonController, nodeNames []string) error {
+	desiredLabels := getReplicaLabelSet(controller.Spec.Template)
+	desiredAnnotations, err := getReplicaAnnotationSet(controller.Spec.Template, controller)
+	if err != nil {
+		return err
+	}
+	prefix := getReplicaPrefix(controller.Name)
+
+	for i := range nodeNames {
+		pod := &api.Pod{
+			ObjectMeta: api.ObjectMeta{
+				Labels:       desiredLabels,
+				Annotations:  desiredAnnotations,
+				GenerateName: prefix,
+			},
+			Spec: api.PodSpec{
+				NodeName: nodeNames[i],
+			},
+		}
+		if err := api.Scheme.Convert(&controller.Spec.Template.Spec, &pod.Spec); err != nil {
+			return fmt.Errorf("unable to convert pod template: %v", err)
+		}
+		if labels.Set(pod.Labels).AsSelector().Empty() {
+			return fmt.Errorf("unable to create pod replica, no labels")
+		}
+		if newPod, err := r.kubeClient.Pods(namespace).Create(pod); err != nil {
+			r.recorder.Eventf(controller, "failedCreate", "Error creating: %v", err)
+			return fmt.Errorf("unable to create pod replica: %v", err)
+		} else {
+			glog.V(4).Infof("Controller %v created pod %v", controller.Name, newPod.Name)
+			r.recorder.Eventf(controller, "successfulCreate", "Created pod: %v", newPod.Name)
+		}
+	}
+
 	return nil
 }
 
