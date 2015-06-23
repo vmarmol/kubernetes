@@ -126,9 +126,9 @@ type TLSClientConfig struct {
 }
 
 // New creates a Kubernetes client for the given config. This client works with pods,
-// replication controllers and services. It allows operations such as list, get, update
-// and delete on these objects. An error is returned if the provided configuration
-// is not valid.
+// replication controllers, daemon controllers and services. It allows operations such
+// as list, get, update and delete on these objects. An error is returned if the provided
+// configuration is not valid.
 func New(c *Config) (*Client, error) {
 	config := *c
 	if err := SetKubernetesDefaults(&config); err != nil {

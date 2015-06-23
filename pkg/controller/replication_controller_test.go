@@ -42,10 +42,11 @@ import (
 )
 
 type FakePodControl struct {
-	controllerSpec []api.ReplicationController
-	deletePodName  []string
-	lock           sync.Mutex
-	err            error
+	controllerSpec       []api.ReplicationController
+	daemonControllerSpec []api.DaemonController
+	deletePodName        []string
+	lock                 sync.Mutex
+	err                  error
 }
 
 // Give each test that starts a background controller upto 1/2 a second.
@@ -65,6 +66,18 @@ func (f *FakePodControl) createReplica(namespace string, spec *api.ReplicationCo
 		return f.err
 	}
 	f.controllerSpec = append(f.controllerSpec, *spec)
+	return nil
+}
+
+func (f *FakePodControl) createReplicaOnNodes(namespace string, controller *api.DaemonController, nodeNames []string) error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	if f.err != nil {
+		return f.err
+	}
+	for range nodeNames {
+		f.daemonControllerSpec = append(f.daemonControllerSpec, *controller)
+	}
 	return nil
 }
 

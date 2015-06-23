@@ -155,6 +155,61 @@ func TestStoreToControllerLister(t *testing.T) {
 	}
 }
 
+func TestStoreToDaemonControllerLister(t *testing.T) {
+	store := NewStore(MetaNamespaceKeyFunc)
+	lister := StoreToDaemonControllerLister{store}
+	testCases := []struct {
+		inDCs      []*api.DaemonController
+		list       func() ([]api.DaemonController, error)
+		outDCNames util.StringSet
+		expectErr  bool
+	}{
+		// Basic listing
+		{
+			inDCs: []*api.DaemonController{
+				{ObjectMeta: api.ObjectMeta{Name: "basic"}},
+			},
+			list: func() ([]api.DaemonController, error) {
+				return lister.List()
+			},
+			outDCNames: util.NewStringSet("basic"),
+		},
+		// Listing multiple controllers
+		{
+			inDCs: []*api.DaemonController{
+				{ObjectMeta: api.ObjectMeta{Name: "basic"}},
+				{ObjectMeta: api.ObjectMeta{Name: "complex"}},
+				{ObjectMeta: api.ObjectMeta{Name: "complex2"}},
+			},
+			list: func() ([]api.DaemonController, error) {
+				return lister.List()
+			},
+			outDCNames: util.NewStringSet("basic", "complex", "complex2"),
+		},
+	}
+	for _, c := range testCases {
+		for _, r := range c.inDCs {
+			store.Add(r)
+		}
+
+		gotControllers, err := c.list()
+		if err != nil && c.expectErr {
+			continue
+		} else if c.expectErr {
+			t.Fatalf("Expected error, got none")
+		} else if err != nil {
+			t.Fatalf("Unexpected error %#v", err)
+		}
+		gotNames := make([]string, len(gotControllers))
+		for ix := range gotControllers {
+			gotNames[ix] = gotControllers[ix].Name
+		}
+		if !c.outDCNames.HasAll(gotNames...) || len(gotNames) != len(c.outDCNames) {
+			t.Errorf("Unexpected got controllers %+v expected %+v", gotNames, c.outDCNames)
+		}
+	}
+}
+
 func TestStoreToPodLister(t *testing.T) {
 	store := NewStore(MetaNamespaceKeyFunc)
 	ids := []string{"foo", "bar", "baz"}

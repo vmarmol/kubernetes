@@ -2919,6 +2919,7 @@ func TestValidateResourceQuota(t *testing.T) {
 			api.ResourcePods:                   resource.MustParse("10"),
 			api.ResourceServices:               resource.MustParse("10"),
 			api.ResourceReplicationControllers: resource.MustParse("10"),
+			api.ResourceDaemonControllers:      resource.MustParse("10"),
 			api.ResourceQuotas:                 resource.MustParse("10"),
 		},
 	}
