@@ -40,6 +40,8 @@ var (
 const (
 	// Daemon Controllers don't need relisting.
 	FullDaemonControllerResyncPeriod = 0
+	// Nodes don't need relisting.
+	FullNodeResyncPeriod = 0
 )
 
 type DaemonManager struct {
@@ -52,6 +54,8 @@ type DaemonManager struct {
 	dcStore cache.StoreToPodLister
 	// Watches changes to all pods.
 	dcController *framework.Controller
+	// Watches changes to all nodes.
+	nodeController *framework.Controller
 	// Controllers that need to be updated.
 	queue *workqueue.Type
 }
@@ -69,6 +73,7 @@ func NewDaemonManager(kubeClient client.Interface) *DaemonManager {
 		},
 		queue: workqueue.New(),
 	}
+	// Manage addition/update of daemon controllers.
 	dm.dcStore.Store, dm.dcController = framework.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func() (runtime.Object, error) {
@@ -86,6 +91,24 @@ func NewDaemonManager(kubeClient client.Interface) *DaemonManager {
 			DeleteFunc: dm.enqueueController,
 		},
 	)
+	// Watch for new nodes or updates to nodes - daemons are typically launched on new nodes as well,
+	_, dm.nodeController = framework.NewInformer(
+		&cache.ListWatch{
+			ListFunc: func() (runtime.Object, error) {
+				return dm.kubeClient.Nodes().List(labels.Everything(), fields.Everything())
+			},
+			WatchFunc: func(rv string) (watch.Interface, error) {
+				return dm.kubeClient.Nodes().Watch(labels.Everything(), fields.Everything(), rv)
+			},
+		},
+		&api.Node{},
+		FullNodeResyncPeriod,
+		framework.ResourceEventHandlerFuncs{
+			AddFunc:    dm.addNode,
+			UpdateFunc: func(old, cur interface{}) {},
+			DeleteFunc: dm.deleteNode,
+		},
+	)
 	dm.syncHandler = dm.syncDaemonController
 	return dm
 }
@@ -93,6 +116,7 @@ func NewDaemonManager(kubeClient client.Interface) *DaemonManager {
 func (dm *DaemonManager) Run(workers int, stopCh <-chan struct{}) {
 	glog.Infoln("The DM is up!")
 	go dm.dcController.Run(stopCh)
+	go dm.nodeController.Run(stopCh)
 	for i := 0; i < workers; i++ {
 		go util.Until(dm.worker, time.Second, stopCh)
 	}
@@ -124,6 +148,14 @@ func (dm *DaemonManager) enqueueController(obj interface{}) {
 		return
 	}
 	dm.queue.Add(key)
+}
+
+func (dm *DaemonManager) addNode(obj interface{}) {
+	glog.Infoln("Node has been added")
+}
+
+func (dm *DaemonManager) deleteNode(obj interface{}) {
+	glog.Infoln("Node has been removed")
 }
 
 func (dm *DaemonManager) syncDaemonController(key string) error {
