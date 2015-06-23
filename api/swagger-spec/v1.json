@@ -292,6 +292,667 @@
     ]
    },
    {
+    "path": "/api/v1/namespaces/{namespaces}/daemoncontrollers",
+    "description": "API at /api/v1 version v1",
+    "operations": [
+     {
+      "type": "v1.DaemonControllerList",
+      "method": "GET",
+      "summary": "list or watch objects of kind DaemonController",
+      "nickname": "listDaemonController",
+      "parameters": [
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "pretty",
+        "description": "If 'true', then the output is pretty printed.",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "labelSelector",
+        "description": "a selector to restrict the list of returned objects by their labels; defaults to everything",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "fieldSelector",
+        "description": "a selector to restrict the list of returned objects by their fields; defaults to everything",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "boolean",
+        "paramType": "query",
+        "name": "watch",
+        "description": "watch for changes to the described resources and return them as a stream of add, update, and remove notifications; specify resourceVersion",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "resourceVersion",
+        "description": "when specified with a watch call, shows changes that occur after that particular version of a resource; defaults to changes from the beginning of history",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "namespaces",
+        "description": "object name and auth scope, such as for teams and projects",
+        "required": true,
+        "allowMultiple": false
+       }
+      ],
+      "responseMessages": [
+       {
+        "code": 200,
+        "message": "OK",
+        "responseModel": "v1.DaemonControllerList"
+       }
+      ],
+      "produces": [
+       "application/json"
+      ],
+      "consumes": [
+       "*/*"
+      ]
+     },
+     {
+      "type": "v1.DaemonController",
+      "method": "POST",
+      "summary": "create a DaemonController",
+      "nickname": "createDaemonController",
+      "parameters": [
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "pretty",
+        "description": "If 'true', then the output is pretty printed.",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "v1.DaemonController",
+        "paramType": "body",
+        "name": "body",
+        "description": "",
+        "required": true,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "namespaces",
+        "description": "object name and auth scope, such as for teams and projects",
+        "required": true,
+        "allowMultiple": false
+       }
+      ],
+      "responseMessages": [
+       {
+        "code": 200,
+        "message": "OK",
+        "responseModel": "v1.DaemonController"
+       }
+      ],
+      "produces": [
+       "application/json"
+      ],
+      "consumes": [
+       "*/*"
+      ]
+     }
+    ]
+   },
+   {
+    "path": "/api/v1/watch/namespaces/{namespaces}/daemoncontrollers",
+    "description": "API at /api/v1 version v1",
+    "operations": [
+     {
+      "type": "json.WatchEvent",
+      "method": "GET",
+      "summary": "watch individual changes to a list of DaemonController",
+      "nickname": "watchDaemonControllerList",
+      "parameters": [
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "pretty",
+        "description": "If 'true', then the output is pretty printed.",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "labelSelector",
+        "description": "a selector to restrict the list of returned objects by their labels; defaults to everything",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "fieldSelector",
+        "description": "a selector to restrict the list of returned objects by their fields; defaults to everything",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "boolean",
+        "paramType": "query",
+        "name": "watch",
+        "description": "watch for changes to the described resources and return them as a stream of add, update, and remove notifications; specify resourceVersion",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "resourceVersion",
+        "description": "when specified with a watch call, shows changes that occur after that particular version of a resource; defaults to changes from the beginning of history",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "namespaces",
+        "description": "object name and auth scope, such as for teams and projects",
+        "required": true,
+        "allowMultiple": false
+       }
+      ],
+      "responseMessages": [
+       {
+        "code": 200,
+        "message": "OK",
+        "responseModel": "json.WatchEvent"
+       }
+      ],
+      "produces": [
+       "application/json"
+      ],
+      "consumes": [
+       "*/*"
+      ]
+     }
+    ]
+   },
+   {
+    "path": "/api/v1/namespaces/{namespaces}/daemoncontrollers/{name}",
+    "description": "API at /api/v1 version v1",
+    "operations": [
+     {
+      "type": "v1.DaemonController",
+      "method": "GET",
+      "summary": "read the specified DaemonController",
+      "nickname": "readDaemonController",
+      "parameters": [
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "pretty",
+        "description": "If 'true', then the output is pretty printed.",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "namespaces",
+        "description": "object name and auth scope, such as for teams and projects",
+        "required": true,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "name",
+        "description": "name of the DaemonController",
+        "required": true,
+        "allowMultiple": false
+       }
+      ],
+      "responseMessages": [
+       {
+        "code": 200,
+        "message": "OK",
+        "responseModel": "v1.DaemonController"
+       }
+      ],
+      "produces": [
+       "application/json"
+      ],
+      "consumes": [
+       "*/*"
+      ]
+     },
+     {
+      "type": "v1.DaemonController",
+      "method": "PUT",
+      "summary": "replace the specified DaemonController",
+      "nickname": "replaceDaemonController",
+      "parameters": [
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "pretty",
+        "description": "If 'true', then the output is pretty printed.",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "v1.DaemonController",
+        "paramType": "body",
+        "name": "body",
+        "description": "",
+        "required": true,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "namespaces",
+        "description": "object name and auth scope, such as for teams and projects",
+        "required": true,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "name",
+        "description": "name of the DaemonController",
+        "required": true,
+        "allowMultiple": false
+       }
+      ],
+      "responseMessages": [
+       {
+        "code": 200,
+        "message": "OK",
+        "responseModel": "v1.DaemonController"
+       }
+      ],
+      "produces": [
+       "application/json"
+      ],
+      "consumes": [
+       "*/*"
+      ]
+     },
+     {
+      "type": "v1.DaemonController",
+      "method": "PATCH",
+      "summary": "partially update the specified DaemonController",
+      "nickname": "patchDaemonController",
+      "parameters": [
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "pretty",
+        "description": "If 'true', then the output is pretty printed.",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "body",
+        "name": "body",
+        "description": "",
+        "required": true,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "namespaces",
+        "description": "object name and auth scope, such as for teams and projects",
+        "required": true,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "name",
+        "description": "name of the DaemonController",
+        "required": true,
+        "allowMultiple": false
+       }
+      ],
+      "responseMessages": [
+       {
+        "code": 200,
+        "message": "OK",
+        "responseModel": "string"
+       }
+      ],
+      "produces": [
+       "application/json"
+      ],
+      "consumes": [
+       "application/json-patch+json",
+       "application/merge-patch+json",
+       "application/strategic-merge-patch+json"
+      ]
+     },
+     {
+      "type": "v1.Status",
+      "method": "DELETE",
+      "summary": "delete a DaemonController",
+      "nickname": "deleteDaemonController",
+      "parameters": [
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "pretty",
+        "description": "If 'true', then the output is pretty printed.",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "v1.DeleteOptions",
+        "paramType": "body",
+        "name": "body",
+        "description": "",
+        "required": true,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "namespaces",
+        "description": "object name and auth scope, such as for teams and projects",
+        "required": true,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "name",
+        "description": "name of the DaemonController",
+        "required": true,
+        "allowMultiple": false
+       }
+      ],
+      "responseMessages": [
+       {
+        "code": 200,
+        "message": "OK",
+        "responseModel": "v1.Status"
+       }
+      ],
+      "produces": [
+       "application/json"
+      ],
+      "consumes": [
+       "*/*"
+      ]
+     }
+    ]
+   },
+   {
+    "path": "/api/v1/watch/namespaces/{namespaces}/daemoncontrollers/{name}",
+    "description": "API at /api/v1 version v1",
+    "operations": [
+     {
+      "type": "json.WatchEvent",
+      "method": "GET",
+      "summary": "watch changes to an object of kind DaemonController",
+      "nickname": "watchDaemonController",
+      "parameters": [
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "pretty",
+        "description": "If 'true', then the output is pretty printed.",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "labelSelector",
+        "description": "a selector to restrict the list of returned objects by their labels; defaults to everything",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "fieldSelector",
+        "description": "a selector to restrict the list of returned objects by their fields; defaults to everything",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "boolean",
+        "paramType": "query",
+        "name": "watch",
+        "description": "watch for changes to the described resources and return them as a stream of add, update, and remove notifications; specify resourceVersion",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "resourceVersion",
+        "description": "when specified with a watch call, shows changes that occur after that particular version of a resource; defaults to changes from the beginning of history",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "namespaces",
+        "description": "object name and auth scope, such as for teams and projects",
+        "required": true,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "path",
+        "name": "name",
+        "description": "name of the DaemonController",
+        "required": true,
+        "allowMultiple": false
+       }
+      ],
+      "responseMessages": [
+       {
+        "code": 200,
+        "message": "OK",
+        "responseModel": "json.WatchEvent"
+       }
+      ],
+      "produces": [
+       "application/json"
+      ],
+      "consumes": [
+       "*/*"
+      ]
+     }
+    ]
+   },
+   {
+    "path": "/api/v1/daemoncontrollers",
+    "description": "API at /api/v1 version v1",
+    "operations": [
+     {
+      "type": "v1.DaemonControllerList",
+      "method": "GET",
+      "summary": "list or watch objects of kind DaemonController",
+      "nickname": "listDaemonController",
+      "parameters": [
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "pretty",
+        "description": "If 'true', then the output is pretty printed.",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "labelSelector",
+        "description": "a selector to restrict the list of returned objects by their labels; defaults to everything",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "fieldSelector",
+        "description": "a selector to restrict the list of returned objects by their fields; defaults to everything",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "boolean",
+        "paramType": "query",
+        "name": "watch",
+        "description": "watch for changes to the described resources and return them as a stream of add, update, and remove notifications; specify resourceVersion",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "resourceVersion",
+        "description": "when specified with a watch call, shows changes that occur after that particular version of a resource; defaults to changes from the beginning of history",
+        "required": false,
+        "allowMultiple": false
+       }
+      ],
+      "responseMessages": [
+       {
+        "code": 200,
+        "message": "OK",
+        "responseModel": "v1.DaemonControllerList"
+       }
+      ],
+      "produces": [
+       "application/json"
+      ],
+      "consumes": [
+       "*/*"
+      ]
+     },
+     {
+      "type": "v1.DaemonController",
+      "method": "POST",
+      "summary": "create a DaemonController",
+      "nickname": "createDaemonController",
+      "parameters": [
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "pretty",
+        "description": "If 'true', then the output is pretty printed.",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "v1.DaemonController",
+        "paramType": "body",
+        "name": "body",
+        "description": "",
+        "required": true,
+        "allowMultiple": false
+       }
+      ],
+      "responseMessages": [
+       {
+        "code": 200,
+        "message": "OK",
+        "responseModel": "v1.DaemonController"
+       }
+      ],
+      "produces": [
+       "application/json"
+      ],
+      "consumes": [
+       "*/*"
+      ]
+     }
+    ]
+   },
+   {
+    "path": "/api/v1/watch/daemoncontrollers",
+    "description": "API at /api/v1 version v1",
+    "operations": [
+     {
+      "type": "json.WatchEvent",
+      "method": "GET",
+      "summary": "watch individual changes to a list of DaemonController",
+      "nickname": "watchDaemonControllerList",
+      "parameters": [
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "pretty",
+        "description": "If 'true', then the output is pretty printed.",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "labelSelector",
+        "description": "a selector to restrict the list of returned objects by their labels; defaults to everything",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "fieldSelector",
+        "description": "a selector to restrict the list of returned objects by their fields; defaults to everything",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "boolean",
+        "paramType": "query",
+        "name": "watch",
+        "description": "watch for changes to the described resources and return them as a stream of add, update, and remove notifications; specify resourceVersion",
+        "required": false,
+        "allowMultiple": false
+       },
+       {
+        "type": "string",
+        "paramType": "query",
+        "name": "resourceVersion",
+        "description": "when specified with a watch call, shows changes that occur after that particular version of a resource; defaults to changes from the beginning of history",
+        "required": false,
+        "allowMultiple": false
+       }
+      ],
+      "responseMessages": [
+       {
+        "code": 200,
+        "message": "OK",
+        "responseModel": "json.WatchEvent"
+       }
+      ],
+      "produces": [
+       "application/json"
+      ],
+      "consumes": [
+       "*/*"
+      ]
+     }
+    ]
+   },
+   {
     "path": "/api/v1/namespaces/{namespaces}/endpoints",
     "description": "API at /api/v1 version v1",
     "operations": [
@@ -10907,8 +11568,8 @@
      }
     }
    },
-   "v1.EndpointsList": {
-    "id": "v1.EndpointsList",
+   "v1.DaemonControllerList": {
+    "id": "v1.DaemonControllerList",
     "required": [
      "items"
     ],
@@ -10922,23 +11583,18 @@
       "description": "version of the schema the object should have"
      },
      "metadata": {
-      "$ref": "v1.ListMeta",
-      "description": "standard list metadata; see http://docs.k8s.io/api-conventions.md#metadata"
+      "$ref": "v1.ListMeta"
      },
      "items": {
       "type": "array",
       "items": {
-       "$ref": "v1.Endpoints"
-      },
-      "description": "list of endpoints"
+       "$ref": "v1.DaemonController"
+      }
      }
     }
    },
-   "v1.Endpoints": {
-    "id": "v1.Endpoints",
-    "required": [
-     "subsets"
-    ],
+   "v1.DaemonController": {
+    "id": "v1.DaemonController",
     "properties": {
      "kind": {
       "type": "string",
@@ -10949,71 +11605,780 @@
       "description": "version of the schema the object should have"
      },
      "metadata": {
+      "$ref": "v1.ObjectMeta"
+     },
+     "spec": {
+      "$ref": "v1.DaemonControllerSpec"
+     },
+     "status": {
+      "$ref": "v1.DaemonControllerStatus"
+     }
+    }
+   },
+   "v1.DaemonControllerSpec": {
+    "id": "v1.DaemonControllerSpec",
+    "properties": {
+     "template": {
+      "$ref": "v1.PodTemplateSpec"
+     }
+    }
+   },
+   "v1.PodTemplateSpec": {
+    "id": "v1.PodTemplateSpec",
+    "properties": {
+     "metadata": {
       "$ref": "v1.ObjectMeta",
       "description": "standard object metadata; see http://docs.k8s.io/api-conventions.md#metadata"
      },
-     "subsets": {
-      "type": "array",
-      "items": {
-       "$ref": "v1.EndpointSubset"
-      },
-      "description": "sets of addresses and ports that comprise a service"
+     "spec": {
+      "$ref": "v1.PodSpec",
+      "description": "specification of the desired behavior of the pod; http://docs.k8s.io/api-conventions.md#spec-and-status"
      }
     }
    },
-   "v1.EndpointSubset": {
-    "id": "v1.EndpointSubset",
-    "properties": {
-     "addresses": {
-      "type": "array",
-      "items": {
-       "$ref": "v1.EndpointAddress"
-      },
-      "description": "IP addresses which offer the related ports"
-     },
-     "ports": {
-      "type": "array",
-      "items": {
-       "$ref": "v1.EndpointPort"
-      },
-      "description": "port numbers available on the related IP addresses"
-     }
-    }
-   },
-   "v1.EndpointAddress": {
-    "id": "v1.EndpointAddress",
+   "v1.PodSpec": {
+    "id": "v1.PodSpec",
     "required": [
-     "ip"
+     "containers"
     ],
     "properties": {
-     "ip": {
-      "type": "string",
-      "description": "IP address of the endpoint"
+     "volumes": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.Volume"
+      },
+      "description": "list of volumes that can be mounted by containers belonging to the pod"
      },
-     "targetRef": {
-      "$ref": "v1.ObjectReference",
-      "description": "reference to object providing the endpoint"
+     "containers": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.Container"
+      },
+      "description": "list of containers belonging to the pod; cannot be updated; containers cannot currently be added or removed; there must be at least one container in a Pod"
+     },
+     "restartPolicy": {
+      "type": "string",
+      "description": "restart policy for all containers within the pod; one of Always, OnFailure, Never; defaults to Always"
+     },
+     "terminationGracePeriodSeconds": {
+      "type": "integer",
+      "format": "int64",
+      "description": "optional duration in seconds the pod needs to terminate gracefully; may be decreased in delete request; value must be non-negative integer; the value zero indicates delete immediately; if this value is not set, the default grace period will be used instead; the grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal; set this value longer than the expected cleanup time for your process"
+     },
+     "activeDeadlineSeconds": {
+      "type": "integer",
+      "format": "int64"
+     },
+     "dnsPolicy": {
+      "type": "string",
+      "description": "DNS policy for containers within the pod; one of 'ClusterFirst' or 'Default'"
+     },
+     "nodeSelector": {
+      "type": "any",
+      "description": "selector which must match a node's labels for the pod to be scheduled on that node"
+     },
+     "serviceAccount": {
+      "type": "string",
+      "description": "name of the ServiceAccount to use to run this pod"
+     },
+     "nodeName": {
+      "type": "string",
+      "description": "node requested for this pod"
+     },
+     "hostNetwork": {
+      "type": "boolean",
+      "description": "host networking requested for this pod"
+     },
+     "imagePullSecrets": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.LocalObjectReference"
+      },
+      "description": "list of references to secrets in the same namespace available for pulling the container images"
      }
     }
    },
-   "v1.EndpointPort": {
-    "id": "v1.EndpointPort",
+   "v1.Volume": {
+    "id": "v1.Volume",
     "required": [
-     "port"
+     "name"
     ],
     "properties": {
      "name": {
       "type": "string",
-      "description": "name of this port"
+      "description": "volume name; must be a DNS_LABEL and unique within the pod"
      },
-     "port": {
+     "hostPath": {
+      "$ref": "v1.HostPathVolumeSource",
+      "description": "pre-existing host file or directory; generally for privileged system daemons or other agents tied to the host"
+     },
+     "emptyDir": {
+      "$ref": "v1.EmptyDirVolumeSource",
+      "description": "temporary directory that shares a pod's lifetime"
+     },
+     "gcePersistentDisk": {
+      "$ref": "v1.GCEPersistentDiskVolumeSource",
+      "description": "GCE disk resource attached to the host machine on demand"
+     },
+     "awsElasticBlockStore": {
+      "$ref": "v1.AWSElasticBlockStoreVolumeSource",
+      "description": "AWS disk resource attached to the host machine on demand"
+     },
+     "gitRepo": {
+      "$ref": "v1.GitRepoVolumeSource",
+      "description": "git repository at a particular revision"
+     },
+     "secret": {
+      "$ref": "v1.SecretVolumeSource",
+      "description": "secret to populate volume"
+     },
+     "nfs": {
+      "$ref": "v1.NFSVolumeSource",
+      "description": "NFS volume that will be mounted in the host machine"
+     },
+     "iscsi": {
+      "$ref": "v1.ISCSIVolumeSource",
+      "description": "iSCSI disk attached to host machine on demand"
+     },
+     "glusterfs": {
+      "$ref": "v1.GlusterfsVolumeSource",
+      "description": "Glusterfs volume that will be mounted on the host machine "
+     },
+     "persistentVolumeClaim": {
+      "$ref": "v1.PersistentVolumeClaimVolumeSource",
+      "description": "a reference to a PersistentVolumeClaim in the same namespace"
+     },
+     "rbd": {
+      "$ref": "v1.RBDVolumeSource",
+      "description": "rados block volume that will be mounted on the host machine"
+     }
+    }
+   },
+   "v1.HostPathVolumeSource": {
+    "id": "v1.HostPathVolumeSource",
+    "required": [
+     "path"
+    ],
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "path of the directory on the host"
+     }
+    }
+   },
+   "v1.EmptyDirVolumeSource": {
+    "id": "v1.EmptyDirVolumeSource",
+    "properties": {
+     "medium": {
+      "type": "string",
+      "description": "type of storage used to back the volume; must be an empty string (default) or Memory"
+     }
+    }
+   },
+   "v1.GCEPersistentDiskVolumeSource": {
+    "id": "v1.GCEPersistentDiskVolumeSource",
+    "required": [
+     "pdName",
+     "fsType"
+    ],
+    "properties": {
+     "pdName": {
+      "type": "string",
+      "description": "unique name of the PD resource in GCE"
+     },
+     "fsType": {
+      "type": "string",
+      "description": "file system type to mount, such as ext4, xfs, ntfs"
+     },
+     "partition": {
       "type": "integer",
       "format": "int32",
-      "description": "port number of the endpoint"
+      "description": "partition on the disk to mount (e.g., '1' for /dev/sda1); if omitted the plain device name (e.g., /dev/sda) will be mounted"
+     },
+     "readOnly": {
+      "type": "boolean",
+      "description": "read-only if true, read-write otherwise (false or unspecified)"
+     }
+    }
+   },
+   "v1.AWSElasticBlockStoreVolumeSource": {
+    "id": "v1.AWSElasticBlockStoreVolumeSource",
+    "required": [
+     "volumeID",
+     "fsType"
+    ],
+    "properties": {
+     "volumeID": {
+      "type": "string",
+      "description": "unique id of the PD resource in AWS"
+     },
+     "fsType": {
+      "type": "string",
+      "description": "file system type to mount, such as ext4, xfs, ntfs"
+     },
+     "partition": {
+      "type": "integer",
+      "format": "int32",
+      "description": "partition on the disk to mount (e.g., '1' for /dev/sda1); if omitted the plain device name (e.g., /dev/sda) will be mounted"
+     },
+     "readOnly": {
+      "type": "boolean",
+      "description": "read-only if true, read-write otherwise (false or unspecified)"
+     }
+    }
+   },
+   "v1.GitRepoVolumeSource": {
+    "id": "v1.GitRepoVolumeSource",
+    "required": [
+     "repository",
+     "revision"
+    ],
+    "properties": {
+     "repository": {
+      "type": "string",
+      "description": "repository URL"
+     },
+     "revision": {
+      "type": "string",
+      "description": "commit hash for the specified revision"
+     }
+    }
+   },
+   "v1.SecretVolumeSource": {
+    "id": "v1.SecretVolumeSource",
+    "required": [
+     "secretName"
+    ],
+    "properties": {
+     "secretName": {
+      "type": "string",
+      "description": "secretName is the name of a secret in the pod's namespace"
+     }
+    }
+   },
+   "v1.NFSVolumeSource": {
+    "id": "v1.NFSVolumeSource",
+    "required": [
+     "server",
+     "path"
+    ],
+    "properties": {
+     "server": {
+      "type": "string",
+      "description": "the hostname or IP address of the NFS server"
+     },
+     "path": {
+      "type": "string",
+      "description": "the path that is exported by the NFS server"
+     },
+     "readOnly": {
+      "type": "boolean",
+      "description": "forces the NFS export to be mounted with read-only permissions"
+     }
+    }
+   },
+   "v1.ISCSIVolumeSource": {
+    "id": "v1.ISCSIVolumeSource",
+    "required": [
+     "targetPortal",
+     "iqn",
+     "lun",
+     "fsType"
+    ],
+    "properties": {
+     "targetPortal": {
+      "type": "string",
+      "description": "iSCSI target portal"
+     },
+     "iqn": {
+      "type": "string",
+      "description": "iSCSI Qualified Name"
+     },
+     "lun": {
+      "type": "integer",
+      "format": "int32",
+      "description": "iscsi target lun number"
+     },
+     "fsType": {
+      "type": "string",
+      "description": "file system type to mount, such as ext4, xfs, ntfs"
+     },
+     "readOnly": {
+      "type": "boolean",
+      "description": "read-only if true, read-write otherwise (false or unspecified)"
+     }
+    }
+   },
+   "v1.GlusterfsVolumeSource": {
+    "id": "v1.GlusterfsVolumeSource",
+    "required": [
+     "endpoints",
+     "path"
+    ],
+    "properties": {
+     "endpoints": {
+      "type": "string",
+      "description": "gluster hosts endpoints name"
+     },
+     "path": {
+      "type": "string",
+      "description": "path to gluster volume"
+     },
+     "readOnly": {
+      "type": "boolean",
+      "description": "glusterfs volume to be mounted with read-only permissions"
+     }
+    }
+   },
+   "v1.PersistentVolumeClaimVolumeSource": {
+    "id": "v1.PersistentVolumeClaimVolumeSource",
+    "required": [
+     "claimName"
+    ],
+    "properties": {
+     "claimName": {
+      "type": "string",
+      "description": "the name of the claim in the same namespace to be mounted as a volume"
+     },
+     "readOnly": {
+      "type": "boolean",
+      "description": "mount volume as read-only when true; default false"
+     }
+    }
+   },
+   "v1.RBDVolumeSource": {
+    "id": "v1.RBDVolumeSource",
+    "required": [
+     "monitors",
+     "image",
+     "pool",
+     "user",
+     "keyring",
+     "secretRef"
+    ],
+    "properties": {
+     "monitors": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "a collection of Ceph monitors"
+     },
+     "image": {
+      "type": "string",
+      "description": "rados image name"
+     },
+     "fsType": {
+      "type": "string",
+      "description": "file system type to mount, such as ext4, xfs, ntfs"
+     },
+     "pool": {
+      "type": "string",
+      "description": "rados pool name; default is rbd; optional"
+     },
+     "user": {
+      "type": "string",
+      "description": "rados user name; default is admin; optional"
+     },
+     "keyring": {
+      "type": "string",
+      "description": "keyring is the path to key ring for rados user; default is /etc/ceph/keyring; optional"
+     },
+     "secretRef": {
+      "$ref": "v1.LocalObjectReference",
+      "description": "name of a secret to authenticate the RBD user; if provided overrides keyring; optional"
+     },
+     "readOnly": {
+      "type": "boolean",
+      "description": "rbd volume to be mounted with read-only permissions"
+     }
+    }
+   },
+   "v1.LocalObjectReference": {
+    "id": "v1.LocalObjectReference",
+    "properties": {
+     "name": {
+      "type": "string",
+      "description": "name of the referent"
+     }
+    }
+   },
+   "v1.Container": {
+    "id": "v1.Container",
+    "required": [
+     "name"
+    ],
+    "properties": {
+     "name": {
+      "type": "string",
+      "description": "name of the container; must be a DNS_LABEL and unique within the pod; cannot be updated"
+     },
+     "image": {
+      "type": "string",
+      "description": "Docker image name"
+     },
+     "command": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "entrypoint array; not executed within a shell; the docker image's entrypoint is used if this is not provided; cannot be updated; variable references $(VAR_NAME) are expanded using the container's environment variables; if a variable cannot be resolved, the reference in the input string will be unchanged; the $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME) ; escaped references will never be expanded, regardless of whether the variable exists or not"
+     },
+     "args": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "command array; the docker image's cmd is used if this is not provided; arguments to the entrypoint; cannot be updated; variable references $(VAR_NAME) are expanded using the container's environment variables; if a variable cannot be resolved, the reference in the input string will be unchanged; the $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME) ; escaped references will never be expanded, regardless of whether the variable exists or not"
+     },
+     "workingDir": {
+      "type": "string",
+      "description": "container's working directory; defaults to image's default; cannot be updated"
+     },
+     "ports": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.ContainerPort"
+      },
+      "description": "list of ports to expose from the container; cannot be updated"
+     },
+     "env": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.EnvVar"
+      },
+      "description": "list of environment variables to set in the container; cannot be updated"
+     },
+     "resources": {
+      "$ref": "v1.ResourceRequirements",
+      "description": "Compute Resources required by this container; cannot be updated"
+     },
+     "volumeMounts": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.VolumeMount"
+      },
+      "description": "pod volumes to mount into the container's filesyste; cannot be updated"
+     },
+     "livenessProbe": {
+      "$ref": "v1.Probe",
+      "description": "periodic probe of container liveness; container will be restarted if the probe fails; cannot be updated"
+     },
+     "readinessProbe": {
+      "$ref": "v1.Probe",
+      "description": "periodic probe of container service readiness; container will be removed from service endpoints if the probe fails; cannot be updated"
+     },
+     "lifecycle": {
+      "$ref": "v1.Lifecycle",
+      "description": "actions that the management system should take in response to container lifecycle events; cannot be updated"
+     },
+     "terminationMessagePath": {
+      "type": "string",
+      "description": "path at which the file to which the container's termination message will be written is mounted into the container's filesystem; message written is intended to be brief final status, such as an assertion failure message; defaults to /dev/termination-log; cannot be updated"
+     },
+     "imagePullPolicy": {
+      "type": "string",
+      "description": "image pull policy; one of Always, Never, IfNotPresent; defaults to Always if :latest tag is specified, or IfNotPresent otherwise; cannot be updated"
+     },
+     "securityContext": {
+      "$ref": "v1.SecurityContext",
+      "description": "security options the pod should run with"
+     }
+    }
+   },
+   "v1.ContainerPort": {
+    "id": "v1.ContainerPort",
+    "required": [
+     "containerPort"
+    ],
+    "properties": {
+     "name": {
+      "type": "string",
+      "description": "name for the port that can be referred to by services; must be a DNS_LABEL and unique without the pod"
+     },
+     "hostPort": {
+      "type": "integer",
+      "format": "int32",
+      "description": "number of port to expose on the host; most containers do not need this"
+     },
+     "containerPort": {
+      "type": "integer",
+      "format": "int32",
+      "description": "number of port to expose on the pod's IP address"
      },
      "protocol": {
       "type": "string",
-      "description": "protocol for this port; must be UDP or TCP; TCP if unspecified"
+      "description": "protocol for port; must be UDP or TCP; TCP if unspecified"
+     },
+     "hostIP": {
+      "type": "string",
+      "description": "host IP to bind the port to"
+     }
+    }
+   },
+   "v1.EnvVar": {
+    "id": "v1.EnvVar",
+    "required": [
+     "name"
+    ],
+    "properties": {
+     "name": {
+      "type": "string",
+      "description": "name of the environment variable; must be a C_IDENTIFIER"
+     },
+     "value": {
+      "type": "string",
+      "description": "value of the environment variable; defaults to empty string; variable references $(VAR_NAME) are expanded using the previously defined environment varibles in the container and any service environment variables; if a variable cannot be resolved, the reference in the input string will be unchanged; the $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME) ; escaped references will never be expanded, regardless of whether the variable exists or not"
+     },
+     "valueFrom": {
+      "$ref": "v1.EnvVarSource",
+      "description": "source for the environment variable's value; cannot be used if value is not empty"
+     }
+    }
+   },
+   "v1.EnvVarSource": {
+    "id": "v1.EnvVarSource",
+    "required": [
+     "fieldRef"
+    ],
+    "properties": {
+     "fieldRef": {
+      "$ref": "v1.ObjectFieldSelector",
+      "description": "selects a field of the pod; only name and namespace are supported"
+     }
+    }
+   },
+   "v1.ObjectFieldSelector": {
+    "id": "v1.ObjectFieldSelector",
+    "required": [
+     "fieldPath"
+    ],
+    "properties": {
+     "apiVersion": {
+      "type": "string",
+      "description": "version of the schema that fieldPath is written in terms of; defaults to v1"
+     },
+     "fieldPath": {
+      "type": "string",
+      "description": "path of the field to select in the specified API version"
+     }
+    }
+   },
+   "v1.ResourceRequirements": {
+    "id": "v1.ResourceRequirements",
+    "properties": {
+     "limits": {
+      "type": "any",
+      "description": "Maximum amount of compute resources allowed"
+     },
+     "requests": {
+      "type": "any",
+      "description": "Minimum amount of resources requested; requests are honored only for persistent volumes as of now"
+     }
+    }
+   },
+   "v1.VolumeMount": {
+    "id": "v1.VolumeMount",
+    "required": [
+     "name",
+     "mountPath"
+    ],
+    "properties": {
+     "name": {
+      "type": "string",
+      "description": "name of the volume to mount"
+     },
+     "readOnly": {
+      "type": "boolean",
+      "description": "mounted read-only if true, read-write otherwise (false or unspecified)"
+     },
+     "mountPath": {
+      "type": "string",
+      "description": "path within the container at which the volume should be mounted"
+     }
+    }
+   },
+   "v1.Probe": {
+    "id": "v1.Probe",
+    "properties": {
+     "exec": {
+      "$ref": "v1.ExecAction",
+      "description": "exec-based handler"
+     },
+     "httpGet": {
+      "$ref": "v1.HTTPGetAction",
+      "description": "HTTP-based handler"
+     },
+     "tcpSocket": {
+      "$ref": "v1.TCPSocketAction",
+      "description": "TCP-based handler; TCP hooks not yet supported"
+     },
+     "initialDelaySeconds": {
+      "type": "integer",
+      "format": "int64",
+      "description": "number of seconds after the container has started before liveness probes are initiated"
+     },
+     "timeoutSeconds": {
+      "type": "integer",
+      "format": "int64",
+      "description": "number of seconds after which liveness probes timeout; defaults to 1 second"
+     }
+    }
+   },
+   "v1.ExecAction": {
+    "id": "v1.ExecAction",
+    "properties": {
+     "command": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "command line to execute inside the container; working directory for the command is root ('/') in the container's file system; the command is exec'd, not run inside a shell; exit status of 0 is treated as live/healthy and non-zero is unhealthy"
+     }
+    }
+   },
+   "v1.HTTPGetAction": {
+    "id": "v1.HTTPGetAction",
+    "required": [
+     "port"
+    ],
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "path to access on the HTTP server"
+     },
+     "port": {
+      "type": "string",
+      "description": "number or name of the port to access on the container"
+     },
+     "host": {
+      "type": "string",
+      "description": "hostname to connect to; defaults to pod IP"
+     }
+    }
+   },
+   "v1.TCPSocketAction": {
+    "id": "v1.TCPSocketAction",
+    "required": [
+     "port"
+    ],
+    "properties": {
+     "port": {
+      "type": "string",
+      "description": "number of name of the port to access on the container"
+     }
+    }
+   },
+   "v1.Lifecycle": {
+    "id": "v1.Lifecycle",
+    "properties": {
+     "postStart": {
+      "$ref": "v1.Handler",
+      "description": "called immediately after a container is started; if the handler fails, the container is terminated and restarted according to its restart policy; other management of the container blocks until the hook completes"
+     },
+     "preStop": {
+      "$ref": "v1.Handler",
+      "description": "called before a container is terminated; the container is terminated after the handler completes; other management of the container blocks until the hook completes"
+     }
+    }
+   },
+   "v1.Handler": {
+    "id": "v1.Handler",
+    "properties": {
+     "exec": {
+      "$ref": "v1.ExecAction",
+      "description": "exec-based handler"
+     },
+     "httpGet": {
+      "$ref": "v1.HTTPGetAction",
+      "description": "HTTP-based handler"
+     },
+     "tcpSocket": {
+      "$ref": "v1.TCPSocketAction",
+      "description": "TCP-based handler; TCP hooks not yet supported"
+     }
+    }
+   },
+   "v1.SecurityContext": {
+    "id": "v1.SecurityContext",
+    "properties": {
+     "capabilities": {
+      "$ref": "v1.Capabilities",
+      "description": "the linux capabilites that should be added or removed"
+     },
+     "privileged": {
+      "type": "boolean",
+      "description": "run the container in privileged mode"
+     },
+     "seLinuxOptions": {
+      "$ref": "v1.SELinuxOptions",
+      "description": "options that control the SELinux labels applied"
+     },
+     "runAsUser": {
+      "type": "integer",
+      "format": "int64",
+      "description": "the user id that runs the first process in the container"
+     }
+    }
+   },
+   "v1.Capabilities": {
+    "id": "v1.Capabilities",
+    "properties": {
+     "add": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.Capability"
+      },
+      "description": "added capabilities"
+     },
+     "drop": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.Capability"
+      },
+      "description": "droped capabilities"
+     }
+    }
+   },
+   "v1.Capability": {
+    "id": "v1.Capability",
+    "properties": {}
+   },
+   "v1.SELinuxOptions": {
+    "id": "v1.SELinuxOptions",
+    "properties": {
+     "user": {
+      "type": "string",
+      "description": "the user label to apply to the container"
+     },
+     "role": {
+      "type": "string",
+      "description": "the role label to apply to the container"
+     },
+     "type": {
+      "type": "string",
+      "description": "the type label to apply to the container"
+     },
+     "level": {
+      "type": "string",
+      "description": "the level label to apply to the container"
+     }
+    }
+   },
+   "v1.DaemonControllerStatus": {
+    "id": "v1.DaemonControllerStatus",
+    "required": [
+     "nodes_running_daemon",
+     "nodes_should_run_daemon"
+    ],
+    "properties": {
+     "nodes_running_daemon": {
+      "type": "integer",
+      "format": "int32"
+     },
+     "nodes_should_run_daemon": {
+      "type": "integer",
+      "format": "int32"
      }
     }
    },
@@ -11128,6 +12493,116 @@
       "type": "integer",
       "format": "int64",
       "description": "the duration in seconds to wait before deleting this object; defaults to a per object value if not specified; zero means delete immediately"
+     }
+    }
+   },
+   "v1.EndpointsList": {
+    "id": "v1.EndpointsList",
+    "required": [
+     "items"
+    ],
+    "properties": {
+     "kind": {
+      "type": "string",
+      "description": "kind of object, in CamelCase; cannot be updated"
+     },
+     "apiVersion": {
+      "type": "string",
+      "description": "version of the schema the object should have"
+     },
+     "metadata": {
+      "$ref": "v1.ListMeta",
+      "description": "standard list metadata; see http://docs.k8s.io/api-conventions.md#metadata"
+     },
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.Endpoints"
+      },
+      "description": "list of endpoints"
+     }
+    }
+   },
+   "v1.Endpoints": {
+    "id": "v1.Endpoints",
+    "required": [
+     "subsets"
+    ],
+    "properties": {
+     "kind": {
+      "type": "string",
+      "description": "kind of object, in CamelCase; cannot be updated"
+     },
+     "apiVersion": {
+      "type": "string",
+      "description": "version of the schema the object should have"
+     },
+     "metadata": {
+      "$ref": "v1.ObjectMeta",
+      "description": "standard object metadata; see http://docs.k8s.io/api-conventions.md#metadata"
+     },
+     "subsets": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.EndpointSubset"
+      },
+      "description": "sets of addresses and ports that comprise a service"
+     }
+    }
+   },
+   "v1.EndpointSubset": {
+    "id": "v1.EndpointSubset",
+    "properties": {
+     "addresses": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.EndpointAddress"
+      },
+      "description": "IP addresses which offer the related ports"
+     },
+     "ports": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.EndpointPort"
+      },
+      "description": "port numbers available on the related IP addresses"
+     }
+    }
+   },
+   "v1.EndpointAddress": {
+    "id": "v1.EndpointAddress",
+    "required": [
+     "ip"
+    ],
+    "properties": {
+     "ip": {
+      "type": "string",
+      "description": "IP address of the endpoint"
+     },
+     "targetRef": {
+      "$ref": "v1.ObjectReference",
+      "description": "reference to object providing the endpoint"
+     }
+    }
+   },
+   "v1.EndpointPort": {
+    "id": "v1.EndpointPort",
+    "required": [
+     "port"
+    ],
+    "properties": {
+     "name": {
+      "type": "string",
+      "description": "name of this port"
+     },
+     "port": {
+      "type": "integer",
+      "format": "int32",
+      "description": "port number of the endpoint"
+     },
+     "protocol": {
+      "type": "string",
+      "description": "protocol for this port; must be UDP or TCP; TCP if unspecified"
      }
     }
    },
@@ -11656,19 +13131,6 @@
     "id": "v1.PersistentVolumeAccessMode",
     "properties": {}
    },
-   "v1.ResourceRequirements": {
-    "id": "v1.ResourceRequirements",
-    "properties": {
-     "limits": {
-      "type": "any",
-      "description": "Maximum amount of compute resources allowed"
-     },
-     "requests": {
-      "type": "any",
-      "description": "Minimum amount of resources requested; requests are honored only for persistent volumes as of now"
-     }
-    }
-   },
    "v1.PersistentVolumeClaimStatus": {
     "id": "v1.PersistentVolumeClaimStatus",
     "properties": {
@@ -11790,201 +13252,6 @@
      }
     }
    },
-   "v1.GCEPersistentDiskVolumeSource": {
-    "id": "v1.GCEPersistentDiskVolumeSource",
-    "required": [
-     "pdName",
-     "fsType"
-    ],
-    "properties": {
-     "pdName": {
-      "type": "string",
-      "description": "unique name of the PD resource in GCE"
-     },
-     "fsType": {
-      "type": "string",
-      "description": "file system type to mount, such as ext4, xfs, ntfs"
-     },
-     "partition": {
-      "type": "integer",
-      "format": "int32",
-      "description": "partition on the disk to mount (e.g., '1' for /dev/sda1); if omitted the plain device name (e.g., /dev/sda) will be mounted"
-     },
-     "readOnly": {
-      "type": "boolean",
-      "description": "read-only if true, read-write otherwise (false or unspecified)"
-     }
-    }
-   },
-   "v1.AWSElasticBlockStoreVolumeSource": {
-    "id": "v1.AWSElasticBlockStoreVolumeSource",
-    "required": [
-     "volumeID",
-     "fsType"
-    ],
-    "properties": {
-     "volumeID": {
-      "type": "string",
-      "description": "unique id of the PD resource in AWS"
-     },
-     "fsType": {
-      "type": "string",
-      "description": "file system type to mount, such as ext4, xfs, ntfs"
-     },
-     "partition": {
-      "type": "integer",
-      "format": "int32",
-      "description": "partition on the disk to mount (e.g., '1' for /dev/sda1); if omitted the plain device name (e.g., /dev/sda) will be mounted"
-     },
-     "readOnly": {
-      "type": "boolean",
-      "description": "read-only if true, read-write otherwise (false or unspecified)"
-     }
-    }
-   },
-   "v1.HostPathVolumeSource": {
-    "id": "v1.HostPathVolumeSource",
-    "required": [
-     "path"
-    ],
-    "properties": {
-     "path": {
-      "type": "string",
-      "description": "path of the directory on the host"
-     }
-    }
-   },
-   "v1.GlusterfsVolumeSource": {
-    "id": "v1.GlusterfsVolumeSource",
-    "required": [
-     "endpoints",
-     "path"
-    ],
-    "properties": {
-     "endpoints": {
-      "type": "string",
-      "description": "gluster hosts endpoints name"
-     },
-     "path": {
-      "type": "string",
-      "description": "path to gluster volume"
-     },
-     "readOnly": {
-      "type": "boolean",
-      "description": "glusterfs volume to be mounted with read-only permissions"
-     }
-    }
-   },
-   "v1.NFSVolumeSource": {
-    "id": "v1.NFSVolumeSource",
-    "required": [
-     "server",
-     "path"
-    ],
-    "properties": {
-     "server": {
-      "type": "string",
-      "description": "the hostname or IP address of the NFS server"
-     },
-     "path": {
-      "type": "string",
-      "description": "the path that is exported by the NFS server"
-     },
-     "readOnly": {
-      "type": "boolean",
-      "description": "forces the NFS export to be mounted with read-only permissions"
-     }
-    }
-   },
-   "v1.RBDVolumeSource": {
-    "id": "v1.RBDVolumeSource",
-    "required": [
-     "monitors",
-     "image",
-     "pool",
-     "user",
-     "keyring",
-     "secretRef"
-    ],
-    "properties": {
-     "monitors": {
-      "type": "array",
-      "items": {
-       "type": "string"
-      },
-      "description": "a collection of Ceph monitors"
-     },
-     "image": {
-      "type": "string",
-      "description": "rados image name"
-     },
-     "fsType": {
-      "type": "string",
-      "description": "file system type to mount, such as ext4, xfs, ntfs"
-     },
-     "pool": {
-      "type": "string",
-      "description": "rados pool name; default is rbd; optional"
-     },
-     "user": {
-      "type": "string",
-      "description": "rados user name; default is admin; optional"
-     },
-     "keyring": {
-      "type": "string",
-      "description": "keyring is the path to key ring for rados user; default is /etc/ceph/keyring; optional"
-     },
-     "secretRef": {
-      "$ref": "v1.LocalObjectReference",
-      "description": "name of a secret to authenticate the RBD user; if provided overrides keyring; optional"
-     },
-     "readOnly": {
-      "type": "boolean",
-      "description": "rbd volume to be mounted with read-only permissions"
-     }
-    }
-   },
-   "v1.LocalObjectReference": {
-    "id": "v1.LocalObjectReference",
-    "properties": {
-     "name": {
-      "type": "string",
-      "description": "name of the referent"
-     }
-    }
-   },
-   "v1.ISCSIVolumeSource": {
-    "id": "v1.ISCSIVolumeSource",
-    "required": [
-     "targetPortal",
-     "iqn",
-     "lun",
-     "fsType"
-    ],
-    "properties": {
-     "targetPortal": {
-      "type": "string",
-      "description": "iSCSI target portal"
-     },
-     "iqn": {
-      "type": "string",
-      "description": "iSCSI Qualified Name"
-     },
-     "lun": {
-      "type": "integer",
-      "format": "int32",
-      "description": "iscsi target lun number"
-     },
-     "fsType": {
-      "type": "string",
-      "description": "file system type to mount, such as ext4, xfs, ntfs"
-     },
-     "readOnly": {
-      "type": "boolean",
-      "description": "read-only if true, read-write otherwise (false or unspecified)"
-     }
-    }
-   },
    "v1.PersistentVolumeStatus": {
     "id": "v1.PersistentVolumeStatus",
     "properties": {
@@ -12051,527 +13318,6 @@
      "status": {
       "$ref": "v1.PodStatus",
       "description": "most recently observed status of the pod; populated by the system, read-only; http://docs.k8s.io/api-conventions.md#spec-and-status"
-     }
-    }
-   },
-   "v1.PodSpec": {
-    "id": "v1.PodSpec",
-    "required": [
-     "containers"
-    ],
-    "properties": {
-     "volumes": {
-      "type": "array",
-      "items": {
-       "$ref": "v1.Volume"
-      },
-      "description": "list of volumes that can be mounted by containers belonging to the pod"
-     },
-     "containers": {
-      "type": "array",
-      "items": {
-       "$ref": "v1.Container"
-      },
-      "description": "list of containers belonging to the pod; cannot be updated; containers cannot currently be added or removed; there must be at least one container in a Pod"
-     },
-     "restartPolicy": {
-      "type": "string",
-      "description": "restart policy for all containers within the pod; one of Always, OnFailure, Never; defaults to Always"
-     },
-     "terminationGracePeriodSeconds": {
-      "type": "integer",
-      "format": "int64",
-      "description": "optional duration in seconds the pod needs to terminate gracefully; may be decreased in delete request; value must be non-negative integer; the value zero indicates delete immediately; if this value is not set, the default grace period will be used instead; the grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal; set this value longer than the expected cleanup time for your process"
-     },
-     "activeDeadlineSeconds": {
-      "type": "integer",
-      "format": "int64"
-     },
-     "dnsPolicy": {
-      "type": "string",
-      "description": "DNS policy for containers within the pod; one of 'ClusterFirst' or 'Default'"
-     },
-     "nodeSelector": {
-      "type": "any",
-      "description": "selector which must match a node's labels for the pod to be scheduled on that node"
-     },
-     "serviceAccount": {
-      "type": "string",
-      "description": "name of the ServiceAccount to use to run this pod"
-     },
-     "nodeName": {
-      "type": "string",
-      "description": "node requested for this pod"
-     },
-     "hostNetwork": {
-      "type": "boolean",
-      "description": "host networking requested for this pod"
-     },
-     "imagePullSecrets": {
-      "type": "array",
-      "items": {
-       "$ref": "v1.LocalObjectReference"
-      },
-      "description": "list of references to secrets in the same namespace available for pulling the container images"
-     }
-    }
-   },
-   "v1.Volume": {
-    "id": "v1.Volume",
-    "required": [
-     "name"
-    ],
-    "properties": {
-     "name": {
-      "type": "string",
-      "description": "volume name; must be a DNS_LABEL and unique within the pod"
-     },
-     "hostPath": {
-      "$ref": "v1.HostPathVolumeSource",
-      "description": "pre-existing host file or directory; generally for privileged system daemons or other agents tied to the host"
-     },
-     "emptyDir": {
-      "$ref": "v1.EmptyDirVolumeSource",
-      "description": "temporary directory that shares a pod's lifetime"
-     },
-     "gcePersistentDisk": {
-      "$ref": "v1.GCEPersistentDiskVolumeSource",
-      "description": "GCE disk resource attached to the host machine on demand"
-     },
-     "awsElasticBlockStore": {
-      "$ref": "v1.AWSElasticBlockStoreVolumeSource",
-      "description": "AWS disk resource attached to the host machine on demand"
-     },
-     "gitRepo": {
-      "$ref": "v1.GitRepoVolumeSource",
-      "description": "git repository at a particular revision"
-     },
-     "secret": {
-      "$ref": "v1.SecretVolumeSource",
-      "description": "secret to populate volume"
-     },
-     "nfs": {
-      "$ref": "v1.NFSVolumeSource",
-      "description": "NFS volume that will be mounted in the host machine"
-     },
-     "iscsi": {
-      "$ref": "v1.ISCSIVolumeSource",
-      "description": "iSCSI disk attached to host machine on demand"
-     },
-     "glusterfs": {
-      "$ref": "v1.GlusterfsVolumeSource",
-      "description": "Glusterfs volume that will be mounted on the host machine "
-     },
-     "persistentVolumeClaim": {
-      "$ref": "v1.PersistentVolumeClaimVolumeSource",
-      "description": "a reference to a PersistentVolumeClaim in the same namespace"
-     },
-     "rbd": {
-      "$ref": "v1.RBDVolumeSource",
-      "description": "rados block volume that will be mounted on the host machine"
-     }
-    }
-   },
-   "v1.EmptyDirVolumeSource": {
-    "id": "v1.EmptyDirVolumeSource",
-    "properties": {
-     "medium": {
-      "type": "string",
-      "description": "type of storage used to back the volume; must be an empty string (default) or Memory"
-     }
-    }
-   },
-   "v1.GitRepoVolumeSource": {
-    "id": "v1.GitRepoVolumeSource",
-    "required": [
-     "repository",
-     "revision"
-    ],
-    "properties": {
-     "repository": {
-      "type": "string",
-      "description": "repository URL"
-     },
-     "revision": {
-      "type": "string",
-      "description": "commit hash for the specified revision"
-     }
-    }
-   },
-   "v1.SecretVolumeSource": {
-    "id": "v1.SecretVolumeSource",
-    "required": [
-     "secretName"
-    ],
-    "properties": {
-     "secretName": {
-      "type": "string",
-      "description": "secretName is the name of a secret in the pod's namespace"
-     }
-    }
-   },
-   "v1.PersistentVolumeClaimVolumeSource": {
-    "id": "v1.PersistentVolumeClaimVolumeSource",
-    "required": [
-     "claimName"
-    ],
-    "properties": {
-     "claimName": {
-      "type": "string",
-      "description": "the name of the claim in the same namespace to be mounted as a volume"
-     },
-     "readOnly": {
-      "type": "boolean",
-      "description": "mount volume as read-only when true; default false"
-     }
-    }
-   },
-   "v1.Container": {
-    "id": "v1.Container",
-    "required": [
-     "name"
-    ],
-    "properties": {
-     "name": {
-      "type": "string",
-      "description": "name of the container; must be a DNS_LABEL and unique within the pod; cannot be updated"
-     },
-     "image": {
-      "type": "string",
-      "description": "Docker image name"
-     },
-     "command": {
-      "type": "array",
-      "items": {
-       "type": "string"
-      },
-      "description": "entrypoint array; not executed within a shell; the docker image's entrypoint is used if this is not provided; cannot be updated; variable references $(VAR_NAME) are expanded using the container's environment variables; if a variable cannot be resolved, the reference in the input string will be unchanged; the $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME) ; escaped references will never be expanded, regardless of whether the variable exists or not"
-     },
-     "args": {
-      "type": "array",
-      "items": {
-       "type": "string"
-      },
-      "description": "command array; the docker image's cmd is used if this is not provided; arguments to the entrypoint; cannot be updated; variable references $(VAR_NAME) are expanded using the container's environment variables; if a variable cannot be resolved, the reference in the input string will be unchanged; the $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME) ; escaped references will never be expanded, regardless of whether the variable exists or not"
-     },
-     "workingDir": {
-      "type": "string",
-      "description": "container's working directory; defaults to image's default; cannot be updated"
-     },
-     "ports": {
-      "type": "array",
-      "items": {
-       "$ref": "v1.ContainerPort"
-      },
-      "description": "list of ports to expose from the container; cannot be updated"
-     },
-     "env": {
-      "type": "array",
-      "items": {
-       "$ref": "v1.EnvVar"
-      },
-      "description": "list of environment variables to set in the container; cannot be updated"
-     },
-     "resources": {
-      "$ref": "v1.ResourceRequirements",
-      "description": "Compute Resources required by this container; cannot be updated"
-     },
-     "volumeMounts": {
-      "type": "array",
-      "items": {
-       "$ref": "v1.VolumeMount"
-      },
-      "description": "pod volumes to mount into the container's filesyste; cannot be updated"
-     },
-     "livenessProbe": {
-      "$ref": "v1.Probe",
-      "description": "periodic probe of container liveness; container will be restarted if the probe fails; cannot be updated"
-     },
-     "readinessProbe": {
-      "$ref": "v1.Probe",
-      "description": "periodic probe of container service readiness; container will be removed from service endpoints if the probe fails; cannot be updated"
-     },
-     "lifecycle": {
-      "$ref": "v1.Lifecycle",
-      "description": "actions that the management system should take in response to container lifecycle events; cannot be updated"
-     },
-     "terminationMessagePath": {
-      "type": "string",
-      "description": "path at which the file to which the container's termination message will be written is mounted into the container's filesystem; message written is intended to be brief final status, such as an assertion failure message; defaults to /dev/termination-log; cannot be updated"
-     },
-     "imagePullPolicy": {
-      "type": "string",
-      "description": "image pull policy; one of Always, Never, IfNotPresent; defaults to Always if :latest tag is specified, or IfNotPresent otherwise; cannot be updated"
-     },
-     "securityContext": {
-      "$ref": "v1.SecurityContext",
-      "description": "security options the pod should run with"
-     }
-    }
-   },
-   "v1.ContainerPort": {
-    "id": "v1.ContainerPort",
-    "required": [
-     "containerPort"
-    ],
-    "properties": {
-     "name": {
-      "type": "string",
-      "description": "name for the port that can be referred to by services; must be a DNS_LABEL and unique without the pod"
-     },
-     "hostPort": {
-      "type": "integer",
-      "format": "int32",
-      "description": "number of port to expose on the host; most containers do not need this"
-     },
-     "containerPort": {
-      "type": "integer",
-      "format": "int32",
-      "description": "number of port to expose on the pod's IP address"
-     },
-     "protocol": {
-      "type": "string",
-      "description": "protocol for port; must be UDP or TCP; TCP if unspecified"
-     },
-     "hostIP": {
-      "type": "string",
-      "description": "host IP to bind the port to"
-     }
-    }
-   },
-   "v1.EnvVar": {
-    "id": "v1.EnvVar",
-    "required": [
-     "name"
-    ],
-    "properties": {
-     "name": {
-      "type": "string",
-      "description": "name of the environment variable; must be a C_IDENTIFIER"
-     },
-     "value": {
-      "type": "string",
-      "description": "value of the environment variable; defaults to empty string; variable references $(VAR_NAME) are expanded using the previously defined environment varibles in the container and any service environment variables; if a variable cannot be resolved, the reference in the input string will be unchanged; the $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME) ; escaped references will never be expanded, regardless of whether the variable exists or not"
-     },
-     "valueFrom": {
-      "$ref": "v1.EnvVarSource",
-      "description": "source for the environment variable's value; cannot be used if value is not empty"
-     }
-    }
-   },
-   "v1.EnvVarSource": {
-    "id": "v1.EnvVarSource",
-    "required": [
-     "fieldRef"
-    ],
-    "properties": {
-     "fieldRef": {
-      "$ref": "v1.ObjectFieldSelector",
-      "description": "selects a field of the pod; only name and namespace are supported"
-     }
-    }
-   },
-   "v1.ObjectFieldSelector": {
-    "id": "v1.ObjectFieldSelector",
-    "required": [
-     "fieldPath"
-    ],
-    "properties": {
-     "apiVersion": {
-      "type": "string",
-      "description": "version of the schema that fieldPath is written in terms of; defaults to v1"
-     },
-     "fieldPath": {
-      "type": "string",
-      "description": "path of the field to select in the specified API version"
-     }
-    }
-   },
-   "v1.VolumeMount": {
-    "id": "v1.VolumeMount",
-    "required": [
-     "name",
-     "mountPath"
-    ],
-    "properties": {
-     "name": {
-      "type": "string",
-      "description": "name of the volume to mount"
-     },
-     "readOnly": {
-      "type": "boolean",
-      "description": "mounted read-only if true, read-write otherwise (false or unspecified)"
-     },
-     "mountPath": {
-      "type": "string",
-      "description": "path within the container at which the volume should be mounted"
-     }
-    }
-   },
-   "v1.Probe": {
-    "id": "v1.Probe",
-    "properties": {
-     "exec": {
-      "$ref": "v1.ExecAction",
-      "description": "exec-based handler"
-     },
-     "httpGet": {
-      "$ref": "v1.HTTPGetAction",
-      "description": "HTTP-based handler"
-     },
-     "tcpSocket": {
-      "$ref": "v1.TCPSocketAction",
-      "description": "TCP-based handler; TCP hooks not yet supported"
-     },
-     "initialDelaySeconds": {
-      "type": "integer",
-      "format": "int64",
-      "description": "number of seconds after the container has started before liveness probes are initiated"
-     },
-     "timeoutSeconds": {
-      "type": "integer",
-      "format": "int64",
-      "description": "number of seconds after which liveness probes timeout; defaults to 1 second"
-     }
-    }
-   },
-   "v1.ExecAction": {
-    "id": "v1.ExecAction",
-    "properties": {
-     "command": {
-      "type": "array",
-      "items": {
-       "type": "string"
-      },
-      "description": "command line to execute inside the container; working directory for the command is root ('/') in the container's file system; the command is exec'd, not run inside a shell; exit status of 0 is treated as live/healthy and non-zero is unhealthy"
-     }
-    }
-   },
-   "v1.HTTPGetAction": {
-    "id": "v1.HTTPGetAction",
-    "required": [
-     "port"
-    ],
-    "properties": {
-     "path": {
-      "type": "string",
-      "description": "path to access on the HTTP server"
-     },
-     "port": {
-      "type": "string",
-      "description": "number or name of the port to access on the container"
-     },
-     "host": {
-      "type": "string",
-      "description": "hostname to connect to; defaults to pod IP"
-     }
-    }
-   },
-   "v1.TCPSocketAction": {
-    "id": "v1.TCPSocketAction",
-    "required": [
-     "port"
-    ],
-    "properties": {
-     "port": {
-      "type": "string",
-      "description": "number of name of the port to access on the container"
-     }
-    }
-   },
-   "v1.Lifecycle": {
-    "id": "v1.Lifecycle",
-    "properties": {
-     "postStart": {
-      "$ref": "v1.Handler",
-      "description": "called immediately after a container is started; if the handler fails, the container is terminated and restarted according to its restart policy; other management of the container blocks until the hook completes"
-     },
-     "preStop": {
-      "$ref": "v1.Handler",
-      "description": "called before a container is terminated; the container is terminated after the handler completes; other management of the container blocks until the hook completes"
-     }
-    }
-   },
-   "v1.Handler": {
-    "id": "v1.Handler",
-    "properties": {
-     "exec": {
-      "$ref": "v1.ExecAction",
-      "description": "exec-based handler"
-     },
-     "httpGet": {
-      "$ref": "v1.HTTPGetAction",
-      "description": "HTTP-based handler"
-     },
-     "tcpSocket": {
-      "$ref": "v1.TCPSocketAction",
-      "description": "TCP-based handler; TCP hooks not yet supported"
-     }
-    }
-   },
-   "v1.SecurityContext": {
-    "id": "v1.SecurityContext",
-    "properties": {
-     "capabilities": {
-      "$ref": "v1.Capabilities",
-      "description": "the linux capabilites that should be added or removed"
-     },
-     "privileged": {
-      "type": "boolean",
-      "description": "run the container in privileged mode"
-     },
-     "seLinuxOptions": {
-      "$ref": "v1.SELinuxOptions",
-      "description": "options that control the SELinux labels applied"
-     },
-     "runAsUser": {
-      "type": "integer",
-      "format": "int64",
-      "description": "the user id that runs the first process in the container"
-     }
-    }
-   },
-   "v1.Capabilities": {
-    "id": "v1.Capabilities",
-    "properties": {
-     "add": {
-      "type": "array",
-      "items": {
-       "$ref": "v1.Capability"
-      },
-      "description": "added capabilities"
-     },
-     "drop": {
-      "type": "array",
-      "items": {
-       "$ref": "v1.Capability"
-      },
-      "description": "droped capabilities"
-     }
-    }
-   },
-   "v1.Capability": {
-    "id": "v1.Capability",
-    "properties": {}
-   },
-   "v1.SELinuxOptions": {
-    "id": "v1.SELinuxOptions",
-    "properties": {
-     "user": {
-      "type": "string",
-      "description": "the user label to apply to the container"
-     },
-     "role": {
-      "type": "string",
-      "description": "the role label to apply to the container"
-     },
-     "type": {
-      "type": "string",
-      "description": "the type label to apply to the container"
-     },
-     "level": {
-      "type": "string",
-      "description": "the level label to apply to the container"
      }
     }
    },
@@ -12794,19 +13540,6 @@
      "template": {
       "$ref": "v1.PodTemplateSpec",
       "description": "the template of the desired behavior of the pod; http://docs.k8s.io/api-conventions.md#spec-and-status"
-     }
-    }
-   },
-   "v1.PodTemplateSpec": {
-    "id": "v1.PodTemplateSpec",
-    "properties": {
-     "metadata": {
-      "$ref": "v1.ObjectMeta",
-      "description": "standard object metadata; see http://docs.k8s.io/api-conventions.md#metadata"
-     },
-     "spec": {
-      "$ref": "v1.PodSpec",
-      "description": "specification of the desired behavior of the pod; http://docs.k8s.io/api-conventions.md#spec-and-status"
      }
     }
    },
