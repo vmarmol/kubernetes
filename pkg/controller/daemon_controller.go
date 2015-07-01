@@ -173,12 +173,12 @@ func (dm *DaemonManager) enqueueController(obj interface{}) {
 }
 
 func (dm *DaemonManager) getPodDaemonController(pod *api.Pod) *api.DaemonController {
-	dc, err := dm.dcStore.GetPodDaemonController(pod)
+	controllers, err := dm.dcStore.GetPodDaemonController(pod)
 	if err != nil {
 		glog.V(4).Infof("No controllers found for pod %v, daemon manager will avoid syncing", pod.Name)
 		return nil
 	}
-	return dc
+	return &controllers[0]
 }
 
 func (dm *DaemonManager) addPod(obj interface{}) {
@@ -241,18 +241,17 @@ func (dm *DaemonManager) deleteNode(obj interface{}) {
 }
 
 func (dm *DaemonManager) manageDaemons(dc *api.DaemonController) error {
-	// Find out which nodes are running the daemon pod specified by dc.
-	nodeToDaemonPodName := make(map[string]string)
-	dcSelector := map[string]string{
-		labels.DaemonControllerLabel: dc.Name,
-	}
-	daemonPods, err := dm.podStore.Pods(dc.Namespace).List(labels.Set(dcSelector).AsSelector())
+	// Find out which nodes are running the daemon pods selected by dc.
+	nodeToDaemonPods := make(map[string][]string) // nodeToDaemonPods["A"] stores names of daemon pods running on node "A"
+	daemonPods, err := dm.podStore.Pods(dc.Namespace).List(labels.Set(dc.Spec.Selector).AsSelector())
 	if err != nil {
 		return err
 	}
 	for i := range daemonPods.Items {
-		nodeToDaemonPodName[daemonPods.Items[i].Spec.NodeName] = daemonPods.Items[i].Name
+		nodeName := daemonPods.Items[i].Spec.NodeName
+		nodeToDaemonPods[nodeName] = append(nodeToDaemonPods[nodeName], daemonPods.Items[i].Name)
 	}
+
 	// For each node, if the node is running the daemon pod but isn't supposed to, kill the daemon
 	// pod. If the node is supposed to run the daemon, but isn't, create the daemon on the node.
 	nodeList, err := dm.kubeClient.Nodes().List(labels.Everything(), fields.Everything())
@@ -264,30 +263,42 @@ func (dm *DaemonManager) manageDaemons(dc *api.DaemonController) error {
 	for i := range nodeList.Items {
 		nodeName := nodeList.Items[i].Name
 		shouldRun := true // TODO (Ananya): Compute this based on the node's labels
-		daemonPodName, isRunning := nodeToDaemonPodName[nodeName]
-		glog.Infoln("examining node with name", nodeName)
+		daemonPodNames, isRunning := nodeToDaemonPods[nodeName]
 		if shouldRun && !isRunning {
+			// If daemon pod is supposed to be running on node, but isn't, create daemon pod
 			if err := dm.podControl.createReplicaOnNode(dc.Namespace, dc, nodeName); err != nil {
 				glog.V(2).Infof("Failed creation, decrementing expectations for controller %q/%q", dc.Namespace, dc.Name)
 				util.HandleError(err)
 			} else {
 				numCreations += 1
 			}
+		} else if shouldRun && len(daemonPodNames) > 1 {
+			// If daemon pod is supposed to be running on node, but more than 1 daemon pod is running, delete the excess daemon pods
+			for i := 1; i < len(daemonPodNames); i++ {
+				if err := dm.podControl.deletePod(dc.Namespace, daemonPodNames[i]); err != nil {
+					glog.V(2).Infof("Failed deletion, decrementing expectations for controller %q/%q", dc.Namespace, dc.Name)
+					util.HandleError(err)
+				} else {
+					numDeletions += 1
+				}
+			}
 		} else if !shouldRun && isRunning {
-			if err := dm.podControl.deletePod(dc.Namespace, daemonPodName); err != nil {
-				glog.V(2).Infof("Failed deletion, decrementing expectations for controller %q/%q", dc.Namespace, dc.Name)
-				util.HandleError(err)
-			} else {
-				numDeletions += 1
+			// If daemon pod isn't supposed to run on node, but it is, delete all daemon pods on node
+			for i := range daemonPodNames {
+				if err := dm.podControl.deletePod(dc.Namespace, daemonPodNames[i]); err != nil {
+					glog.V(2).Infof("Failed deletion, decrementing expectations for controller %q/%q", dc.Namespace, dc.Name)
+					util.HandleError(err)
+				} else {
+					numDeletions += 1
+				}
 			}
 		}
 	}
-	glog.Infof("Pending stuff: %d %d", numCreations, numDeletions)
-	// Set expectations
 	dcKey, err := controllerKeyFunc(dc)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", dc, err)
 	}
+	// TODO: correct this to SetExpectations
 	dm.expectations.ExpectCreations(dcKey, numCreations)
 	dm.expectations.ExpectDeletions(dcKey, numDeletions)
 	return nil

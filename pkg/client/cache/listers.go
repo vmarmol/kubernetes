@@ -248,23 +248,32 @@ func (s *StoreToDaemonControllerLister) List() (controllers []api.DaemonControll
 	return controllers, nil
 }
 
-func (s *StoreToDaemonControllerLister) GetPodDaemonController(pod *api.Pod) (controller *api.DaemonController, err error) {
-	daemonControllerName, exists := pod.Labels[labels.DaemonControllerLabel]
-	if !exists {
-		err = fmt.Errorf("pod %v is not controlled by a daemon controller", pod.Name)
+func (s *StoreToDaemonControllerLister) GetPodDaemonController(pod *api.Pod) (controllers []api.DaemonController, err error) {
+	var selector labels.Selector
+	var dc api.DaemonController
+
+	if len(pod.Labels) == 0 {
+		err = fmt.Errorf("No controllers found for pod %v because it has no labels", pod.Name)
 		return
 	}
+
 	for _, m := range s.Store.List() {
-		dc := *m.(*api.DaemonController)
+		dc = *m.(*api.DaemonController)
 		if dc.Namespace != pod.Namespace {
 			continue
 		}
-		if dc.Name == daemonControllerName {
-			controller = &dc
-			return
+		labelSet := labels.Set(dc.Spec.Selector)
+		selector = labels.Set(dc.Spec.Selector).AsSelector()
+
+		// If an dc with a nil or empty selector creeps in, it should match nothing, not everything.
+		if labelSet.AsSelector().Empty() || !selector.Matches(labels.Set(pod.Labels)) {
+			continue
 		}
+		controllers = append(controllers, dc)
 	}
-	err = fmt.Errorf("could not find controllers for pod %s in namespace %s", pod.Name, pod.Namespace)
+	if len(controllers) == 0 {
+		err = fmt.Errorf("Could not find controllers for pod %s in namespace %s with labels: %v", pod.Name, pod.Namespace, pod.Labels)
+	}
 	return
 }
 
