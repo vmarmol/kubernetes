@@ -369,6 +369,14 @@ func convert_api_DaemonControllerSpec_To_v1_DaemonControllerSpec(in *api.DaemonC
 	if defaulting, found := s.DefaultingInterface(reflect.TypeOf(*in)); found {
 		defaulting.(func(*api.DaemonControllerSpec))(in)
 	}
+	if in.Selector != nil {
+		out.Selector = make(map[string]string)
+		for key, val := range in.Selector {
+			out.Selector[key] = val
+		}
+	} else {
+		out.Selector = nil
+	}
 	if in.Template != nil {
 		out.Template = new(PodTemplateSpec)
 		if err := convert_api_PodTemplateSpec_To_v1_PodTemplateSpec(in.Template, out.Template, s); err != nil {
@@ -2742,6 +2750,14 @@ func convert_v1_DaemonControllerList_To_api_DaemonControllerList(in *DaemonContr
 func convert_v1_DaemonControllerSpec_To_api_DaemonControllerSpec(in *DaemonControllerSpec, out *api.DaemonControllerSpec, s conversion.Scope) error {
 	if defaulting, found := s.DefaultingInterface(reflect.TypeOf(*in)); found {
 		defaulting.(func(*DaemonControllerSpec))(in)
+	}
+	if in.Selector != nil {
+		out.Selector = make(map[string]string)
+		for key, val := range in.Selector {
+			out.Selector[key] = val
+		}
+	} else {
+		out.Selector = nil
 	}
 	if in.Template != nil {
 		out.Template = new(api.PodTemplateSpec)

@@ -249,7 +249,7 @@ func (h *HumanReadablePrinter) HandledResources() []string {
 var podColumns = []string{"NAME", "READY", "REASON", "RESTARTS", "AGE"}
 var podTemplateColumns = []string{"TEMPLATE", "CONTAINER(S)", "IMAGE(S)", "PODLABELS"}
 var replicationControllerColumns = []string{"CONTROLLER", "CONTAINER(S)", "IMAGE(S)", "SELECTOR", "REPLICAS"}
-var daemonControllerColumns = []string{"CONTROLLER", "CONTAINER(S)", "IMAGE(S)", "Node-SELECTOR"}
+var daemonControllerColumns = []string{"CONTROLLER", "CONTAINER(S)", "IMAGE(S)", "SELECTOR", "NODE-SELECTOR"}
 var serviceColumns = []string{"NAME", "LABELS", "SELECTOR", "IP(S)", "PORT(S)"}
 var endpointColumns = []string{"NAME", "ENDPOINTS"}
 var nodeColumns = []string{"NAME", "LABELS", "STATUS"}
@@ -518,10 +518,11 @@ func printDaemonController(controller *api.DaemonController, w io.Writer, withNa
 	if len(containers) > 0 {
 		firstContainer, containers = containers[0], containers[1:]
 	}
-	_, err := fmt.Fprintf(w, "%s\t%s\t%s\n",
+	_, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 		name,
 		firstContainer.Name,
-		firstContainer.Image)
+		firstContainer.Image,
+		formatLabels(controller.Spec.Selector))
 	if err != nil {
 		return err
 	}

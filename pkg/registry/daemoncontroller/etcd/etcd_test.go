@@ -85,6 +85,7 @@ var validPodTemplate = api.PodTemplate{
 }
 
 var validControllerSpec = api.DaemonControllerSpec{
+	Selector: validPodTemplate.Template.Labels,
 	Template: &validPodTemplate.Template,
 }
 
@@ -166,6 +167,7 @@ func TestCreateControllerWithGeneratedName(t *testing.T) {
 			GenerateName: "dc-",
 		},
 		Spec: api.DaemonControllerSpec{
+			Selector: map[string]string{"a": "b"},
 			Template: &validPodTemplate.Template,
 		},
 	}
@@ -239,6 +241,10 @@ func TestEtcdControllerValidatesUpdate(t *testing.T) {
 		},
 		func(dc api.DaemonController) (runtime.Object, bool, error) {
 			dc.Spec.Template.Spec.RestartPolicy = api.RestartPolicyOnFailure
+			return storage.Update(ctx, &dc)
+		},
+		func(dc api.DaemonController) (runtime.Object, bool, error) {
+			dc.Spec.Selector = map[string]string{}
 			return storage.Update(ctx, &dc)
 		},
 	}
@@ -509,11 +515,8 @@ func TestEtcdWatchControllersMatch(t *testing.T) {
 	storage, fakeClient := newStorage(t)
 	fakeClient.ExpectNotFoundGet(etcdgeneric.NamespaceKeyRootFunc(ctx, "/registry/pods"))
 
-	controllerLabels := map[string]string{
-		"name": "example_dc",
-	}
 	watching, err := storage.Watch(ctx,
-		labels.SelectorFromSet(controllerLabels),
+		labels.SelectorFromSet(validController.Spec.Selector),
 		fields.Everything(),
 		"1",
 	)
@@ -528,7 +531,7 @@ func TestEtcdWatchControllersMatch(t *testing.T) {
 	controller := &api.DaemonController{
 		ObjectMeta: api.ObjectMeta{
 			Name:      "foo",
-			Labels:    controllerLabels,
+			Labels:    validController.Spec.Selector,
 			Namespace: "default",
 		},
 	}
@@ -585,6 +588,7 @@ func TestEtcdWatchControllersFields(t *testing.T) {
 	controller := &api.DaemonController{
 		ObjectMeta: api.ObjectMeta{
 			Name:      "foo",
+			Labels:    validController.Spec.Selector,
 			Namespace: "default",
 		},
 		Status: api.DaemonControllerStatus{
@@ -684,12 +688,14 @@ func TestCreate(t *testing.T) {
 		// valid
 		&api.DaemonController{
 			Spec: api.DaemonControllerSpec{
+				Selector: map[string]string{"a": "b"},
 				Template: &validPodTemplate.Template,
 			},
 		},
 		// invalid
 		&api.DaemonController{
 			Spec: api.DaemonControllerSpec{
+				Selector: map[string]string{},
 				Template: &validPodTemplate.Template,
 			},
 		},

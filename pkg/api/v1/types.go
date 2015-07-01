@@ -1027,10 +1027,13 @@ type ReplicationControllerList struct {
 
 // DaemonControllerSpec is the specification of a daemon controller.
 type DaemonControllerSpec struct {
+	// Selector is a label query over pods that are managed by the daemon controller.
+	Selector map[string]string `json:"selector"`
+
 	// Template is the object that describes the pod that will be created.
-	// The Daemon Controller will create this pod on every node that matches
-	// the template's node selector (or on every node if no node selector is
-	// specified).
+	// The Daemon Controller will create exactly one copy of this pod on every node
+	// that matches the template's node selector (or on every node if no node
+	// selector is specified).
 	Template *PodTemplateSpec `json:"template,omitempty"`
 }
 

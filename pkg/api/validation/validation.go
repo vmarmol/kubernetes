@@ -1238,10 +1238,21 @@ func ValidateDaemonControllerUpdate(oldController, controller *api.DaemonControl
 // ValidateDaemonControllerSpec tests if required fields in the daemon controller spec are set.
 func ValidateDaemonControllerSpec(spec *api.DaemonControllerSpec) errs.ValidationErrorList {
 	allErrs := errs.ValidationErrorList{}
+
+	selector := labels.Set(spec.Selector).AsSelector()
+	if selector.Empty() {
+		allErrs = append(allErrs, errs.NewFieldRequired("selector"))
+	}
+
 	if spec.Template == nil {
 		allErrs = append(allErrs, errs.NewFieldRequired("template"))
 	} else {
+		labels := labels.Set(spec.Template.Labels)
+		if !selector.Matches(labels) {
+			allErrs = append(allErrs, errs.NewFieldInvalid("template.labels", spec.Template.Labels, "selector does not match template"))
+		}
 		allErrs = append(allErrs, ValidatePodTemplateSpec(spec.Template).Prefix("template")...)
+		// RestartPolicy has already been first-order validated as per ValidatePodTemplateSpec().
 		if spec.Template.Spec.RestartPolicy != api.RestartPolicyAlways {
 			allErrs = append(allErrs, errs.NewFieldNotSupported("template.restartPolicy", spec.Template.Spec.RestartPolicy))
 		}

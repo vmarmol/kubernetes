@@ -337,6 +337,14 @@ func deepCopy_v1_DaemonControllerList(in DaemonControllerList, out *DaemonContro
 }
 
 func deepCopy_v1_DaemonControllerSpec(in DaemonControllerSpec, out *DaemonControllerSpec, c *conversion.Cloner) error {
+	if in.Selector != nil {
+		out.Selector = make(map[string]string)
+		for key, val := range in.Selector {
+			out.Selector[key] = val
+		}
+	} else {
+		out.Selector = nil
+	}
 	if in.Template != nil {
 		out.Template = new(PodTemplateSpec)
 		if err := deepCopy_v1_PodTemplateSpec(*in.Template, out.Template, c); err != nil {
