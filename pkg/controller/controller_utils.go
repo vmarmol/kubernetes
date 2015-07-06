@@ -70,6 +70,7 @@ type ControllerExpectationsInterface interface {
 	GetExpectations(controllerKey string) (*PodExpectations, bool, error)
 	SatisfiedExpectations(controllerKey string) bool
 	DeleteExpectations(controllerKey string)
+	SetExpectations(controllerKey string, add, del int) error
 	ExpectCreations(controllerKey string, adds int) error
 	ExpectDeletions(controllerKey string, dels int) error
 	CreationObserved(controllerKey string)
@@ -125,19 +126,19 @@ func (r *ControllerExpectations) SatisfiedExpectations(controllerKey string) boo
 	return true
 }
 
-// setExpectations registers new expectations for the given controller. Forgets existing expectations.
-func (r *ControllerExpectations) setExpectations(controllerKey string, add, del int) error {
+// SetExpectations registers new expectations for the given controller. Forgets existing expectations.
+func (r *ControllerExpectations) SetExpectations(controllerKey string, add, del int) error {
 	podExp := &PodExpectations{add: int64(add), del: int64(del), key: controllerKey}
 	glog.V(4).Infof("Setting expectations %+v", podExp)
 	return r.Add(podExp)
 }
 
 func (r *ControllerExpectations) ExpectCreations(controllerKey string, adds int) error {
-	return r.setExpectations(controllerKey, adds, 0)
+	return r.SetExpectations(controllerKey, adds, 0)
 }
 
 func (r *ControllerExpectations) ExpectDeletions(controllerKey string, dels int) error {
-	return r.setExpectations(controllerKey, 0, dels)
+	return r.SetExpectations(controllerKey, 0, dels)
 }
 
 // Decrements the expectation counts of the given controller.

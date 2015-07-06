@@ -37,7 +37,7 @@ const (
 	// Daemon Controllers will periodically check that their daemons are running as expected.
 	FullDaemonControllerResyncPeriod = 30 * time.Second // TODO: Figure out if this time seems reasonable.
 	// Nodes don't need relisting.
-	FullNodeResyncPeriod = 0
+	FullNodeResyncPeriod = 10 * time.Minute // TODO: Figure out if this time seems reasonable.
 )
 
 type DaemonManager struct {
@@ -52,6 +52,8 @@ type DaemonManager struct {
 	dcStore cache.StoreToDaemonControllerLister
 	// A store of pods, populated by the podController
 	podStore cache.StoreToPodLister
+	// A store of pods, populated by the podController
+	nodeStore cache.StoreToNodeLister
 	// Watches changes to all pods.
 	dcController *framework.Controller
 	// Watches changes to all pods
@@ -89,8 +91,10 @@ func NewDaemonManager(kubeClient client.Interface) *DaemonManager {
 		&api.DaemonController{},
 		FullDaemonControllerResyncPeriod,
 		framework.ResourceEventHandlerFuncs{
-			AddFunc:    dm.enqueueController,
-			UpdateFunc: func(old, cur interface{}) {},
+			AddFunc: dm.enqueueController,
+			UpdateFunc: func(old, cur interface{}) {
+				dm.enqueueController(cur)
+			},
 			DeleteFunc: dm.enqueueController,
 		},
 	)
@@ -109,12 +113,12 @@ func NewDaemonManager(kubeClient client.Interface) *DaemonManager {
 		PodRelistPeriod,
 		framework.ResourceEventHandlerFuncs{
 			AddFunc:    dm.addPod,
-			UpdateFunc: func(old, cur interface{}) {},
+			UpdateFunc: func(old, cur interface{}) {}, // TODO: add update function, and call it
 			DeleteFunc: dm.deletePod,
 		},
 	)
 	// Watch for new nodes or updates to nodes - daemons are launched on new nodes, and possibly when labels on nodes change,
-	_, dm.nodeController = framework.NewInformer(
+	dm.nodeStore.Store, dm.nodeController = framework.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func() (runtime.Object, error) {
 				return dm.kubeClient.Nodes().List(labels.Everything(), fields.Everything())
@@ -126,9 +130,11 @@ func NewDaemonManager(kubeClient client.Interface) *DaemonManager {
 		&api.Node{},
 		FullNodeResyncPeriod,
 		framework.ResourceEventHandlerFuncs{
-			AddFunc:    dm.addNode,
-			UpdateFunc: func(old, cur interface{}) {},
-			DeleteFunc: dm.deleteNode,
+			AddFunc: dm.processNode,
+			UpdateFunc: func(old, cur interface{}) {
+				dm.processNode(cur)
+			},
+			DeleteFunc: func(node interface{}) {},
 		},
 	)
 	dm.syncHandler = dm.syncDaemonController
@@ -222,22 +228,16 @@ func (dm *DaemonManager) deletePod(obj interface{}) {
 	}
 }
 
-func (dm *DaemonManager) addNode(obj interface{}) {
+func (dm *DaemonManager) processNode(obj interface{}) {
 	node := obj.(*api.Node)
 	daemonControllers, err := dm.dcStore.List()
 	if err != nil {
-		glog.Errorf("Error getting daemon controllers when adding node %q: %v", node.Name, err)
+		glog.Errorf("Error getting daemon controllers when processing node %q: %v", node.Name, err)
 		return
 	}
 	for i := range daemonControllers {
 		dm.enqueueController(daemonControllers[i])
 	}
-}
-
-func (dm *DaemonManager) deleteNode(obj interface{}) {
-	glog.Infoln("Node has been removed")
-	// Get the daemon controller for the node
-	// Update expectations
 }
 
 func (dm *DaemonManager) manageDaemons(dc *api.DaemonController) error {
@@ -254,53 +254,55 @@ func (dm *DaemonManager) manageDaemons(dc *api.DaemonController) error {
 
 	// For each node, if the node is running the daemon pod but isn't supposed to, kill the daemon
 	// pod. If the node is supposed to run the daemon, but isn't, create the daemon on the node.
-	nodeList, err := dm.kubeClient.Nodes().List(labels.Everything(), fields.Everything())
+	nodeList, err := dm.nodeStore.List()
 	if err != nil {
 		glog.Errorf("Couldn't get list of nodes when adding daemon controller %+v: %v", dc, err)
 		return err
 	}
-	var numCreations, numDeletions int
+	var nodesNeedingDaemons, podsToDelete []string
 	for i := range nodeList.Items {
 		nodeName := nodeList.Items[i].Name
-		shouldRun := true // TODO (Ananya): Compute this based on the node's labels
+		nodeSelector := labels.Set(dc.Spec.Template.Spec.NodeSelector).AsSelector()
+		shouldRun := nodeSelector.Matches(labels.Set(nodeList.Items[i].Labels))
 		daemonPodNames, isRunning := nodeToDaemonPods[nodeName]
 		if shouldRun && !isRunning {
-			// If daemon pod is supposed to be running on node, but isn't, create daemon pod
-			if err := dm.podControl.createReplicaOnNode(dc.Namespace, dc, nodeName); err != nil {
-				glog.V(2).Infof("Failed creation, decrementing expectations for controller %q/%q", dc.Namespace, dc.Name)
-				util.HandleError(err)
-			} else {
-				numCreations += 1
-			}
+			// If daemon pod is supposed to be running on node, but isn't, create daemon pod.
+			nodesNeedingDaemons = append(nodesNeedingDaemons, nodeName)
 		} else if shouldRun && len(daemonPodNames) > 1 {
-			// If daemon pod is supposed to be running on node, but more than 1 daemon pod is running, delete the excess daemon pods
+			// If daemon pod is supposed to be running on node, but more than 1 daemon pod is running, delete the excess daemon pods.
 			for i := 1; i < len(daemonPodNames); i++ {
-				if err := dm.podControl.deletePod(dc.Namespace, daemonPodNames[i]); err != nil {
-					glog.V(2).Infof("Failed deletion, decrementing expectations for controller %q/%q", dc.Namespace, dc.Name)
-					util.HandleError(err)
-				} else {
-					numDeletions += 1
-				}
+				podsToDelete = append(podsToDelete, daemonPodNames[i])
 			}
 		} else if !shouldRun && isRunning {
-			// If daemon pod isn't supposed to run on node, but it is, delete all daemon pods on node
+			// If daemon pod isn't supposed to run on node, but it is, delete all daemon pods on node.
 			for i := range daemonPodNames {
-				if err := dm.podControl.deletePod(dc.Namespace, daemonPodNames[i]); err != nil {
-					glog.V(2).Infof("Failed deletion, decrementing expectations for controller %q/%q", dc.Namespace, dc.Name)
-					util.HandleError(err)
-				} else {
-					numDeletions += 1
-				}
+				podsToDelete = append(podsToDelete, daemonPodNames[i])
 			}
 		}
 	}
+
+	// We need to set expectations before creating/deleting pods to avoid race conditions.
 	dcKey, err := controllerKeyFunc(dc)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", dc, err)
 	}
-	// TODO: correct this to SetExpectations
-	dm.expectations.ExpectCreations(dcKey, numCreations)
-	dm.expectations.ExpectDeletions(dcKey, numDeletions)
+	dm.expectations.SetExpectations(dcKey, len(nodesNeedingDaemons), len(podsToDelete))
+
+	for i := range nodesNeedingDaemons {
+		if err := dm.podControl.createReplicaOnNode(dc.Namespace, dc, nodesNeedingDaemons[i]); err != nil {
+			glog.V(2).Infof("Failed creation, decrementing expectations for controller %q/%q", dc.Namespace, dc.Name)
+			dm.expectations.CreationObserved(dcKey)
+			util.HandleError(err)
+		}
+	}
+	for i := range podsToDelete {
+		if err := dm.podControl.deletePod(dc.Namespace, podsToDelete[i]); err != nil {
+			glog.V(2).Infof("Failed deletion, decrementing expectations for controller %q/%q", dc.Namespace, dc.Name)
+			dm.expectations.DeletionObserved(dcKey)
+			util.HandleError(err)
+		}
+	}
+
 	return nil
 }
 
@@ -330,7 +332,7 @@ func (dm *DaemonManager) syncDaemonController(key string) error {
 	if dcNeedsSync {
 		return dm.manageDaemons(dc)
 	} else {
-		dm.queue.Add(key) // TODO (Ananya): Figure out if we should add it back, or let relists take care of syncs
+		dm.queue.Add(key) // TODO: Figure out if we should add the dc back to the queue
 	}
 	return nil
 }
