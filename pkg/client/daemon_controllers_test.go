@@ -25,7 +25,7 @@ import (
 )
 
 func getDCResourceName() string {
-	return "daemoncontrollers"
+	return "daemonControllers"
 }
 
 func TestListDaemonControllers(t *testing.T) {

@@ -378,7 +378,7 @@ func (rm *ReplicationManager) syncReplicationController(key string) error {
 	// Check the expectations of the rc before counting active pods, otherwise a new pod can sneak in
 	// and update the expectations after we've retrieved active pods from the store. If a new pod enters
 	// the store after we've checked the expectation, the rc sync is just deferred till the next relist.
-	rcKey, err := controllerKeyFunc(controller)
+	rcKey, err := controllerKeyFunc(&controller)
 	if err != nil {
 		glog.Errorf("Couldn't get key for replication controller %+v: %v", controller, err)
 	}

@@ -74,7 +74,7 @@ func TestRESTMapper(t *testing.T) {
 		t.Errorf("unexpected version mapping: %s %s %v", v, k, err)
 	}
 
-	if v, k, err := RESTMapper.VersionAndKindForResource("daemoncontrollers"); err != nil || v != "v1" || k != "DaemonController" {
+	if v, k, err := RESTMapper.VersionAndKindForResource("daemonControllers"); err != nil || v != "v1" || k != "DaemonController" {
 		t.Errorf("unexpected version mapping: %s %s %v", v, k, err)
 	}
 

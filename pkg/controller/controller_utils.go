@@ -375,3 +375,28 @@ func updateReplicaCount(rcClient client.ReplicationControllerInterface, controll
 	// Failed 2 updates one of which was with the latest controller, return the update error
 	return
 }
+
+func storeDaemonStatus(dcClient client.DaemonControllerInterface, dc *api.DaemonController, desiredNumberScheduled, currentNumberScheduled, numberMisscheduled int) error {
+	if dc.Status.DesiredNumberScheduled == desiredNumberScheduled && dc.Status.CurrentNumberScheduled == currentNumberScheduled && dc.Status.NumberMisscheduled == numberMisscheduled {
+		return nil
+	}
+
+	var updateErr, getErr error
+	for i := 0; i <= updateRetries; i++ {
+		dc.Status.DesiredNumberScheduled = desiredNumberScheduled
+		dc.Status.CurrentNumberScheduled = currentNumberScheduled
+		dc.Status.NumberMisscheduled = numberMisscheduled
+		_, updateErr := dcClient.Update(dc)
+		if updateErr == nil {
+			return updateErr
+		}
+		// Update the controller with the latest resource version for the next poll
+		if dc, getErr = dcClient.Get(dc.Name); getErr != nil {
+			// If the GET fails we can't trust status.Replicas anymore. This error
+			// is bound to be more interesting than the update failure.
+			return getErr
+		}
+	}
+	// Failed 2 updates one of which was with the latest controller, return the update error
+	return updateErr
+}

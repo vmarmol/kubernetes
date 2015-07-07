@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"reflect"
 	"time"
 
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/api"
@@ -37,7 +38,9 @@ const (
 	// Daemon Controllers will periodically check that their daemons are running as expected.
 	FullDaemonControllerResyncPeriod = 30 * time.Second // TODO: Figure out if this time seems reasonable.
 	// Nodes don't need relisting.
-	FullNodeResyncPeriod = 10 * time.Minute // TODO: Figure out if this time seems reasonable.
+	FullNodeResyncPeriod = 0
+	// Daemon pods don't need relisting.
+	FullDaemonPodResyncPeriod = 0
 )
 
 type DaemonManager struct {
@@ -91,11 +94,18 @@ func NewDaemonManager(kubeClient client.Interface) *DaemonManager {
 		&api.DaemonController{},
 		FullDaemonControllerResyncPeriod,
 		framework.ResourceEventHandlerFuncs{
-			AddFunc: dm.enqueueController,
+			AddFunc: func(old interface{}) {
+				glog.Infoln("Adding dc")
+				dm.enqueueController(old)
+			},
 			UpdateFunc: func(old, cur interface{}) {
+				glog.Infoln("Updating dc")
 				dm.enqueueController(cur)
 			},
-			DeleteFunc: dm.enqueueController,
+			DeleteFunc: func(old interface{}) {
+				glog.Infoln("Deleting dc")
+				dm.enqueueController(old)
+			},
 		},
 	)
 	// Watch for creation/deletion of pods. The reason we watch is that we don't want a daemon controller to create/delete
@@ -110,10 +120,10 @@ func NewDaemonManager(kubeClient client.Interface) *DaemonManager {
 			},
 		},
 		&api.Pod{},
-		PodRelistPeriod,
+		FullDaemonPodResyncPeriod,
 		framework.ResourceEventHandlerFuncs{
 			AddFunc:    dm.addPod,
-			UpdateFunc: func(old, cur interface{}) {}, // TODO: add update function, and call it
+			UpdateFunc: dm.updatePod, // TODO: add update function, and call it
 			DeleteFunc: dm.deletePod,
 		},
 	)
@@ -130,10 +140,8 @@ func NewDaemonManager(kubeClient client.Interface) *DaemonManager {
 		&api.Node{},
 		FullNodeResyncPeriod,
 		framework.ResourceEventHandlerFuncs{
-			AddFunc: dm.processNode,
-			UpdateFunc: func(old, cur interface{}) {
-				dm.processNode(cur)
-			},
+			AddFunc:    dm.addNode,
+			UpdateFunc: dm.updateNode,
 			DeleteFunc: func(node interface{}) {},
 		},
 	)
@@ -169,6 +177,17 @@ func (dm *DaemonManager) worker() {
 	}
 }
 
+func (dm *DaemonManager) enqueueAllControllers() {
+	daemonControllers, err := dm.dcStore.List()
+	if err != nil {
+		glog.Errorf("Error enqueueing daemon controllers: %v", err)
+		return
+	}
+	for i := range daemonControllers {
+		dm.enqueueController(&daemonControllers[i])
+	}
+}
+
 func (dm *DaemonManager) enqueueController(obj interface{}) {
 	key, err := controllerKeyFunc(obj)
 	if err != nil {
@@ -188,6 +207,7 @@ func (dm *DaemonManager) getPodDaemonController(pod *api.Pod) *api.DaemonControl
 }
 
 func (dm *DaemonManager) addPod(obj interface{}) {
+	glog.Infoln("Pod added!")
 	pod := obj.(*api.Pod)
 	if dc := dm.getPodDaemonController(pod); dc != nil {
 		dcKey, err := controllerKeyFunc(dc)
@@ -199,7 +219,32 @@ func (dm *DaemonManager) addPod(obj interface{}) {
 	}
 }
 
+// When a pod is updated, figure out what controller/s manage it and wake them
+// up. If the labels of the pod have changed we need to awaken both the old
+// and new controller. old and cur must be *api.Pod types.
+func (dm *DaemonManager) updatePod(old, cur interface{}) {
+	glog.Infoln("Pod update")
+	if api.Semantic.DeepEqual(old, cur) {
+		// A periodic relist will send update events for all known pods.
+		return
+	}
+	curPod := cur.(*api.Pod)
+	if dc := dm.getPodDaemonController(curPod); dc != nil {
+		dm.enqueueController(dc)
+	}
+	oldPod := old.(*api.Pod)
+	// Only need to get the old controller if the labels changed.
+	if !reflect.DeepEqual(curPod.Labels, oldPod.Labels) {
+		// If the old and new dc are the same, the first one that syncs
+		// will set expectations preventing any damage from the second.
+		if oldRC := dm.getPodDaemonController(oldPod); oldRC != nil {
+			dm.enqueueController(oldRC)
+		}
+	}
+}
+
 func (dm *DaemonManager) deletePod(obj interface{}) {
+	glog.Infoln("Pod deleted!")
 	pod, ok := obj.(*api.Pod)
 
 	// When a delete is dropped, the relist will notice a pod in the store not
@@ -228,28 +273,40 @@ func (dm *DaemonManager) deletePod(obj interface{}) {
 	}
 }
 
-func (dm *DaemonManager) processNode(obj interface{}) {
-	node := obj.(*api.Node)
-	daemonControllers, err := dm.dcStore.List()
-	if err != nil {
-		glog.Errorf("Error getting daemon controllers when processing node %q: %v", node.Name, err)
-		return
-	}
-	for i := range daemonControllers {
-		dm.enqueueController(daemonControllers[i])
-	}
+func (dm *DaemonManager) addNode(obj interface{}) {
+	glog.Infoln("Processing Node")
+	dm.enqueueAllControllers()
 }
 
-func (dm *DaemonManager) manageDaemons(dc *api.DaemonController) error {
-	// Find out which nodes are running the daemon pods selected by dc.
+func (dm *DaemonManager) updateNode(old, cur interface{}) {
+	oldNode := old.(*api.Node)
+	curNode := cur.(*api.Node)
+	if api.Semantic.DeepEqual(oldNode.Name, curNode.Name) && api.Semantic.DeepEqual(oldNode.Namespace, curNode.Namespace) && api.Semantic.DeepEqual(oldNode.Labels, curNode.Labels) {
+		// A periodic relist will send update events for all known pods.
+		return
+	}
+	glog.Infoln("Updating node")
+	dm.enqueueAllControllers()
+}
+
+func (dm *DaemonManager) getNodesToDaemonPods(dc *api.DaemonController) (map[string][]string, error) {
 	nodeToDaemonPods := make(map[string][]string) // nodeToDaemonPods["A"] stores names of daemon pods running on node "A"
 	daemonPods, err := dm.podStore.Pods(dc.Namespace).List(labels.Set(dc.Spec.Selector).AsSelector())
 	if err != nil {
-		return err
+		return nodeToDaemonPods, err
 	}
 	for i := range daemonPods.Items {
 		nodeName := daemonPods.Items[i].Spec.NodeName
 		nodeToDaemonPods[nodeName] = append(nodeToDaemonPods[nodeName], daemonPods.Items[i].Name)
+	}
+	return nodeToDaemonPods, nil
+}
+
+func (dm *DaemonManager) manageDaemons(dc *api.DaemonController) {
+	// Find out which nodes are running the daemon pods selected by dc.
+	nodeToDaemonPods, err := dm.getNodesToDaemonPods(dc)
+	if err != nil {
+		glog.Errorf("Error getting node to daemon pod mapping for daemon controller %+v: %v", dc, err)
 	}
 
 	// For each node, if the node is running the daemon pod but isn't supposed to, kill the daemon
@@ -257,7 +314,6 @@ func (dm *DaemonManager) manageDaemons(dc *api.DaemonController) error {
 	nodeList, err := dm.nodeStore.List()
 	if err != nil {
 		glog.Errorf("Couldn't get list of nodes when adding daemon controller %+v: %v", dc, err)
-		return err
 	}
 	var nodesNeedingDaemons, podsToDelete []string
 	for i := range nodeList.Items {
@@ -288,6 +344,7 @@ func (dm *DaemonManager) manageDaemons(dc *api.DaemonController) error {
 	}
 	dm.expectations.SetExpectations(dcKey, len(nodesNeedingDaemons), len(podsToDelete))
 
+	glog.Infof("nodesNeedingDaemons: %+v", nodesNeedingDaemons)
 	for i := range nodesNeedingDaemons {
 		if err := dm.podControl.createReplicaOnNode(dc.Namespace, dc, nodesNeedingDaemons[i]); err != nil {
 			glog.V(2).Infof("Failed creation, decrementing expectations for controller %q/%q", dc.Namespace, dc.Name)
@@ -295,6 +352,8 @@ func (dm *DaemonManager) manageDaemons(dc *api.DaemonController) error {
 			util.HandleError(err)
 		}
 	}
+
+	glog.Infof("podsToDelete: %+v", podsToDelete)
 	for i := range podsToDelete {
 		if err := dm.podControl.deletePod(dc.Namespace, podsToDelete[i]); err != nil {
 			glog.V(2).Infof("Failed deletion, decrementing expectations for controller %q/%q", dc.Namespace, dc.Name)
@@ -302,14 +361,46 @@ func (dm *DaemonManager) manageDaemons(dc *api.DaemonController) error {
 			util.HandleError(err)
 		}
 	}
+}
 
-	return nil
+func (dm *DaemonManager) updateDaemonStatus(dc *api.DaemonController) {
+	glog.Infof("Updating daemon status")
+	nodeToDaemonPods, err := dm.getNodesToDaemonPods(dc)
+	if err != nil {
+		glog.Errorf("Error getting node to daemon pod mapping for daemon %+v: %v", dc, err)
+	}
+
+	nodeList, err := dm.nodeStore.List()
+	if err != nil {
+		glog.Errorf("Couldn't get list of nodes when adding daemon %+v: %v", dc, err)
+	}
+
+	var desiredNumberScheduled, currentNumberScheduled, numberMisscheduled int
+	for i := range nodeList.Items {
+		nodeSelector := labels.Set(dc.Spec.Template.Spec.NodeSelector).AsSelector()
+		shouldRun := nodeSelector.Matches(labels.Set(nodeList.Items[i].Labels))
+		numDaemonPods := len(nodeToDaemonPods[nodeList.Items[i].Name])
+		if shouldRun {
+			desiredNumberScheduled++
+			if numDaemonPods == 1 {
+				currentNumberScheduled++
+			}
+		} else if numDaemonPods >= 1 {
+			numberMisscheduled++
+		}
+	}
+
+	glog.Infof("Counts: %d %d %d", desiredNumberScheduled, currentNumberScheduled, numberMisscheduled)
+	err = storeDaemonStatus(dm.kubeClient.DaemonControllers(dc.Namespace), dc, desiredNumberScheduled, currentNumberScheduled, numberMisscheduled)
+	if err != nil {
+		glog.Errorf("Error storing status for daemon %+v: %v", dc, err)
+	}
 }
 
 func (dm *DaemonManager) syncDaemonController(key string) error {
 	startTime := time.Now()
 	defer func() {
-		glog.V(4).Infof("Finished syncing daemon controller %q (%v)", key, time.Now().Sub(startTime))
+		glog.V(4).Infof("Finished syncing daemon %q (%v)", key, time.Now().Sub(startTime))
 	}()
 	obj, exists, err := dm.dcStore.Store.GetByKey(key)
 	if !exists {
@@ -324,15 +415,18 @@ func (dm *DaemonManager) syncDaemonController(key string) error {
 	}
 	dc := obj.(*api.DaemonController)
 
+	// Don't process a daemon controller until all it's and deletions have been processed. For example
+	// if dc foo asked for 3 new daemon pods in the previous call to manageDaemons, then we do not want
+	// to call manageDaemons on foo until the daemons have been created.
 	dcKey, err := controllerKeyFunc(dc)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", dc, err)
 	}
 	dcNeedsSync := dm.expectations.SatisfiedExpectations(dcKey)
 	if dcNeedsSync {
-		return dm.manageDaemons(dc)
-	} else {
-		dm.queue.Add(key) // TODO: Figure out if we should add the dc back to the queue
+		dm.manageDaemons(dc)
 	}
+
+	dm.updateDaemonStatus(dc)
 	return nil
 }

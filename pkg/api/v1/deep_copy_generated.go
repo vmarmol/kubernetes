@@ -357,8 +357,9 @@ func deepCopy_v1_DaemonControllerSpec(in DaemonControllerSpec, out *DaemonContro
 }
 
 func deepCopy_v1_DaemonControllerStatus(in DaemonControllerStatus, out *DaemonControllerStatus, c *conversion.Cloner) error {
-	out.NodesRunningDaemon = in.NodesRunningDaemon
-	out.NodesShouldRunDaemon = in.NodesShouldRunDaemon
+	out.CurrentNumberScheduled = in.CurrentNumberScheduled
+	out.NumberMisscheduled = in.NumberMisscheduled
+	out.DesiredNumberScheduled = in.DesiredNumberScheduled
 	return nil
 }
 

@@ -392,8 +392,9 @@ func convert_api_DaemonControllerStatus_To_v1_DaemonControllerStatus(in *api.Dae
 	if defaulting, found := s.DefaultingInterface(reflect.TypeOf(*in)); found {
 		defaulting.(func(*api.DaemonControllerStatus))(in)
 	}
-	out.NodesRunningDaemon = in.NodesRunningDaemon
-	out.NodesShouldRunDaemon = in.NodesShouldRunDaemon
+	out.CurrentNumberScheduled = in.CurrentNumberScheduled
+	out.NumberMisscheduled = in.NumberMisscheduled
+	out.DesiredNumberScheduled = in.DesiredNumberScheduled
 	return nil
 }
 
@@ -2774,8 +2775,9 @@ func convert_v1_DaemonControllerStatus_To_api_DaemonControllerStatus(in *DaemonC
 	if defaulting, found := s.DefaultingInterface(reflect.TypeOf(*in)); found {
 		defaulting.(func(*DaemonControllerStatus))(in)
 	}
-	out.NodesRunningDaemon = in.NodesRunningDaemon
-	out.NodesShouldRunDaemon = in.NodesShouldRunDaemon
+	out.CurrentNumberScheduled = in.CurrentNumberScheduled
+	out.NumberMisscheduled = in.NumberMisscheduled
+	out.DesiredNumberScheduled = in.DesiredNumberScheduled
 	return nil
 }
 

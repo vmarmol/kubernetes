@@ -2220,6 +2220,8 @@ func TestValidateReplicationController(t *testing.T) {
 
 func TestValidateDaemonControllerUpdate(t *testing.T) {
 	validSelector := map[string]string{"a": "b"}
+	validSelector2 := map[string]string{"c": "d"}
+	invalidSelector := map[string]string{"NoUppercaseOrSpecialCharsLike=Equals": "b"}
 	validPodTemplate := api.PodTemplate{
 		Template: api.PodTemplateSpec{
 			ObjectMeta: api.ObjectMeta{
@@ -2232,21 +2234,7 @@ func TestValidateDaemonControllerUpdate(t *testing.T) {
 			},
 		},
 	}
-	readWriteVolumePodTemplate := api.PodTemplate{
-		Template: api.PodTemplateSpec{
-			ObjectMeta: api.ObjectMeta{
-				Labels: validSelector,
-			},
-			Spec: api.PodSpec{
-				RestartPolicy: api.RestartPolicyAlways,
-				DNSPolicy:     api.DNSClusterFirst,
-				Containers:    []api.Container{{Name: "abc", Image: "image", ImagePullPolicy: "IfNotPresent"}},
-				Volumes:       []api.Volume{{Name: "gcepd", VolumeSource: api.VolumeSource{GCEPersistentDisk: &api.GCEPersistentDiskVolumeSource{"my-PD", "ext4", 1, false}}}},
-			},
-		},
-	}
-	validSelector2 := map[string]string{"c": "d"}
-	readWriteVolumePodTemplate2 := api.PodTemplate{
+	validPodTemplate2 := api.PodTemplate{
 		Template: api.PodTemplateSpec{
 			ObjectMeta: api.ObjectMeta{
 				Labels: validSelector2,
@@ -2255,11 +2243,9 @@ func TestValidateDaemonControllerUpdate(t *testing.T) {
 				RestartPolicy: api.RestartPolicyAlways,
 				DNSPolicy:     api.DNSClusterFirst,
 				Containers:    []api.Container{{Name: "abc", Image: "image", ImagePullPolicy: "IfNotPresent"}},
-				Volumes:       []api.Volume{{Name: "gcepd", VolumeSource: api.VolumeSource{GCEPersistentDisk: &api.GCEPersistentDiskVolumeSource{"my-PD", "ext4", 1, false}}}},
 			},
 		},
 	}
-	invalidSelector := map[string]string{"NoUppercaseOrSpecialCharsLike=Equals": "b"}
 	invalidPodTemplate := api.PodTemplate{
 		Template: api.PodTemplateSpec{
 			Spec: api.PodSpec{
@@ -2268,6 +2254,19 @@ func TestValidateDaemonControllerUpdate(t *testing.T) {
 			},
 			ObjectMeta: api.ObjectMeta{
 				Labels: invalidSelector,
+			},
+		},
+	}
+	readWriteVolumePodTemplate := api.PodTemplate{
+		Template: api.PodTemplateSpec{
+			ObjectMeta: api.ObjectMeta{
+				Labels: validSelector,
+			},
+			Spec: api.PodSpec{
+				Volumes:       []api.Volume{{Name: "gcepd", VolumeSource: api.VolumeSource{GCEPersistentDisk: &api.GCEPersistentDiskVolumeSource{"my-PD", "ext4", 1, false}}}},
+				RestartPolicy: api.RestartPolicyAlways,
+				DNSPolicy:     api.DNSClusterFirst,
+				Containers:    []api.Container{{Name: "abc", Image: "image", ImagePullPolicy: "IfNotPresent"}},
 			},
 		},
 	}
@@ -2303,24 +2302,8 @@ func TestValidateDaemonControllerUpdate(t *testing.T) {
 			update: api.DaemonController{
 				ObjectMeta: api.ObjectMeta{Name: "abc", Namespace: api.NamespaceDefault},
 				Spec: api.DaemonControllerSpec{
-					Selector: validSelector,
-					Template: &readWriteVolumePodTemplate.Template,
-				},
-			},
-		},
-		{
-			old: api.DaemonController{
-				ObjectMeta: api.ObjectMeta{Name: "abc", Namespace: api.NamespaceDefault},
-				Spec: api.DaemonControllerSpec{
-					Selector: validSelector,
-					Template: &validPodTemplate.Template,
-				},
-			},
-			update: api.DaemonController{
-				ObjectMeta: api.ObjectMeta{Name: "abc", Namespace: api.NamespaceDefault},
-				Spec: api.DaemonControllerSpec{
 					Selector: validSelector2,
-					Template: &readWriteVolumePodTemplate2.Template,
+					Template: &validPodTemplate2.Template,
 				},
 			},
 		},
@@ -2378,6 +2361,22 @@ func TestValidateDaemonControllerUpdate(t *testing.T) {
 				Spec: api.DaemonControllerSpec{
 					Selector: validSelector,
 					Template: &invalidPodTemplate.Template,
+				},
+			},
+		},
+		"read-write volume": {
+			old: api.DaemonController{
+				ObjectMeta: api.ObjectMeta{Name: "", Namespace: api.NamespaceDefault},
+				Spec: api.DaemonControllerSpec{
+					Selector: validSelector,
+					Template: &validPodTemplate.Template,
+				},
+			},
+			update: api.DaemonController{
+				ObjectMeta: api.ObjectMeta{Name: "abc", Namespace: api.NamespaceDefault},
+				Spec: api.DaemonControllerSpec{
+					Selector: validSelector,
+					Template: &readWriteVolumePodTemplate.Template,
 				},
 			},
 		},

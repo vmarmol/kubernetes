@@ -1040,11 +1040,17 @@ type DaemonControllerSpec struct {
 // DaemonControllerStatus represents the current status of a daemon
 // controller.
 type DaemonControllerStatus struct {
-	// NodesRunningDaemon is the number of nodes running the Daemon.
-	NodesRunningDaemon int `json:"nodes_running_daemon"`
+	// CurrentNumberScheduled is the number of nodes that are supposed to run the daemon.
+	// that are (correctly) running exactly 1 copy of the daemon.
+	CurrentNumberScheduled int `json:"currentNumberScheduled"`
 
-	// NodesShouldRunDaemon is the number of nodes that should be running the Daemon.
-	NodesShouldRunDaemon int `json:"nodes_should_run_daemon"`
+	// NumberMisscheduled is the number of nodes that are running the Daemon, but are
+	// not supposed to run the daemon.
+	NumberMisscheduled int `json:"numberMisscheduled"`
+
+	// DesiredNumberScheduled is the total number of nodes that should be running the Daemon
+	// (including nodes correctly running the daemon).
+	DesiredNumberScheduled int `json:"desiredNumberScheduled"`
 }
 
 // DaemonController represents the configuration of a daemon controller.
@@ -1845,7 +1851,7 @@ const (
 	// ReplicationControllers, number
 	ResourceReplicationControllers ResourceName = "replicationcontrollers"
 	// DaemonControllers, number
-	ResourceDaemonControllers ResourceName = "daemoncontrollers"
+	ResourceDaemonControllers ResourceName = "daemonControllers"
 	// ResourceQuotas, number
 	ResourceQuotas ResourceName = "resourcequotas"
 	// ResourceSecrets, number
