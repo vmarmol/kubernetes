@@ -23,6 +23,9 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/api"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/api/meta"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/client"
+	"github.com/GoogleCloudPlatform/kubernetes/pkg/fields"
+	"github.com/GoogleCloudPlatform/kubernetes/pkg/labels"
+	"github.com/GoogleCloudPlatform/kubernetes/pkg/util/errors"
 )
 
 const (
@@ -54,6 +57,8 @@ func ReaperFor(kind string, c client.Interface) (Reaper, error) {
 	switch kind {
 	case "ReplicationController":
 		return &ReplicationControllerReaper{c, Interval, Timeout}, nil
+	case "DaemonController":
+		return &DaemonControllerReaper{c}, nil
 	case "Pod":
 		return &PodReaper{c}, nil
 	case "Service":
@@ -69,6 +74,9 @@ func ReaperForReplicationController(c client.Interface, timeout time.Duration) (
 type ReplicationControllerReaper struct {
 	client.Interface
 	pollInterval, timeout time.Duration
+}
+type DaemonControllerReaper struct {
+	client.Interface
 }
 type PodReaper struct {
 	client.Interface
@@ -104,6 +112,39 @@ func (reaper *ReplicationControllerReaper) Stop(namespace, name string, timeout 
 		return "", err
 	}
 	return fmt.Sprintf("%s stopped", name), nil
+}
+
+func (reaper *DaemonControllerReaper) Stop(namespace, name string, timeout time.Duration, gracePeriod *api.DeleteOptions) (string, error) {
+	daemonClient := reaper.DaemonControllers(namespace)
+	dc, err := daemonClient.Get(name)
+	if err != nil {
+		return "", err
+	}
+	selector := labels.Set(dc.Spec.Selector).AsSelector()
+
+	var errorList []error
+	if err := daemonClient.Delete(name); err != nil {
+		errorList = append(errorList, err)
+	}
+
+	pods := reaper.Pods(namespace)
+	podList, err := pods.List(labels.Everything(), fields.Everything())
+	if err != nil {
+		return "", err
+	}
+	for _, pod := range podList.Items {
+		if selector.Matches(labels.Set(pod.Labels)) {
+			if err := pods.Delete(pod.Name, gracePeriod); err != nil {
+				errorList = append(errorList, err)
+			}
+		}
+	}
+
+	if len(errorList) == 0 {
+		return fmt.Sprintf("%s stopped", name), nil
+	} else {
+		return "", errors.NewAggregate(errorList)
+	}
 }
 
 func (reaper *PodReaper) Stop(namespace, name string, timeout time.Duration, gracePeriod *api.DeleteOptions) (string, error) {

@@ -367,6 +367,7 @@ type PodDescriber struct {
 
 func (d *PodDescriber) Describe(namespace, name string) (string, error) {
 	rc := d.ReplicationControllers(namespace)
+	dc := d.DaemonControllers(namespace)
 	pc := d.Pods(namespace)
 
 	pod, err := pc.Get(name)
@@ -397,11 +398,14 @@ func (d *PodDescriber) Describe(namespace, name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	return describePod(pod, rcs, events)
+	dcs, err := getDaemonControllersForLabels(dc, labels.Set(pod.Labels))
+	if err != nil {
+		return "", err
+	}
+	return describePod(pod, rcs, dcs, events)
 }
 
-func describePod(pod *api.Pod, rcs []api.ReplicationController, events *api.EventList) (string, error) {
+func describePod(pod *api.Pod, rcs []api.ReplicationController, dcs []api.DaemonController, events *api.EventList) (string, error) {
 	return tabbedString(func(out io.Writer) error {
 		fmt.Fprintf(out, "Name:\t%s\n", pod.Name)
 		fmt.Fprintf(out, "Image(s):\t%s\n", makeImageList(&pod.Spec))
@@ -409,6 +413,7 @@ func describePod(pod *api.Pod, rcs []api.ReplicationController, events *api.Even
 		fmt.Fprintf(out, "Labels:\t%s\n", formatLabels(pod.Labels))
 		fmt.Fprintf(out, "Status:\t%s\n", string(pod.Status.Phase))
 		fmt.Fprintf(out, "Replication Controllers:\t%s\n", printReplicationControllersByLabels(rcs))
+		fmt.Fprintf(out, "Daemons:\t%s\n", printDaemonControllersByLabels(dcs))
 		fmt.Fprintf(out, "Containers:\n")
 		describeContainers(pod.Status.ContainerStatuses, out)
 		if len(pod.Status.Conditions) > 0 {
@@ -533,7 +538,7 @@ func (d *ReplicationControllerDescriber) Describe(namespace, name string) (strin
 		return "", err
 	}
 
-	running, waiting, succeeded, failed, err := getPodStatusForReplicationController(pc, controller)
+	running, waiting, succeeded, failed, err := getPodStatusForController(pc, controller.Spec.Selector)
 	if err != nil {
 		return "", err
 	}
@@ -569,14 +574,42 @@ type DaemonControllerDescriber struct {
 }
 
 func (d *DaemonControllerDescriber) Describe(namespace, name string) (string, error) {
-	// TODO (Ananya): Implement Describe.
-	return describeDaemonController("I'm not a Marvel, I'm a DC!") //running, waiting, succeeded, failed)
+	dc := d.DaemonControllers(namespace)
+	pc := d.Pods(namespace)
+
+	controller, err := dc.Get(name)
+	if err != nil {
+		return "", err
+	}
+
+	running, waiting, succeeded, failed, err := getPodStatusForController(pc, controller.Spec.Selector)
+	if err != nil {
+		return "", err
+	}
+
+	events, _ := d.Events(namespace).Search(controller)
+
+	return describeDaemonController(controller, events, running, waiting, succeeded, failed)
 }
 
-func describeDaemonController(s string) (string, error) {
+func describeDaemonController(controller *api.DaemonController, events *api.EventList, running, waiting, succeeded, failed int) (string, error) {
 	return tabbedString(func(out io.Writer) error {
-		// TODO (Ananya): Implement describeDaemonController.
-		fmt.Fprintf(out, "Name:\t%s\n", s)
+		fmt.Fprintf(out, "Name:\t%s\n", controller.Name)
+		if controller.Spec.Template != nil {
+			fmt.Fprintf(out, "Image(s):\t%s\n", makeImageList(&controller.Spec.Template.Spec))
+		} else {
+			fmt.Fprintf(out, "Image(s):\t%s\n", "<no template>")
+		}
+		fmt.Fprintf(out, "Selector:\t%s\n", formatLabels(controller.Spec.Selector))
+		fmt.Fprintf(out, "Node-Selector:\t%s\n", formatLabels(controller.Spec.Template.Spec.NodeSelector))
+		fmt.Fprintf(out, "Labels:\t%s\n", formatLabels(controller.Labels))
+		fmt.Fprintf(out, "Desired Number of Nodes Scheduled: %d\n", controller.Status.DesiredNumberScheduled)
+		fmt.Fprintf(out, "Current Number of Nodes Scheduled: %d\n", controller.Status.CurrentNumberScheduled)
+		fmt.Fprintf(out, "Number of Nodes Misscheduled: %d\n", controller.Status.NumberMisscheduled)
+		fmt.Fprintf(out, "Pods Status:\t%d Running / %d Waiting / %d Succeeded / %d Failed\n", running, waiting, succeeded, failed)
+		if events != nil {
+			DescribeEvents(events, out)
+		}
 		return nil
 	})
 }
@@ -860,6 +893,31 @@ func DescribeEvents(el *api.EventList, w io.Writer) {
 	}
 }
 
+// Get all daemon controllers whose selectors would match a given set of
+// labels.
+// TODO Move this to pkg/client and ideally implement it server-side (instead
+// of getting all RC's and searching through them manually).
+// TODO write an interface for controllers and fuse getReplicationControllersForLabels
+// and getDaemonControllersForLabels.
+func getDaemonControllersForLabels(c client.DaemonControllerInterface, labelsToMatch labels.Labels) ([]api.DaemonController, error) {
+	// Get all daemon controllers.
+	// TODO this needs a namespace scope as argument
+	dcs, err := c.List(labels.Everything())
+	if err != nil {
+		return nil, fmt.Errorf("error getting daemon controllers: %v", err)
+	}
+
+	// Find the ones that match labelsToMatch.
+	var matchingDCs []api.DaemonController
+	for _, controller := range dcs.Items {
+		selector := labels.SelectorFromSet(controller.Spec.Selector)
+		if selector.Matches(labelsToMatch) {
+			matchingDCs = append(matchingDCs, controller)
+		}
+	}
+	return matchingDCs, nil
+}
+
 // Get all replication controllers whose selectors would match a given set of
 // labels.
 // TODO Move this to pkg/client and ideally implement it server-side (instead
@@ -883,6 +941,20 @@ func getReplicationControllersForLabels(c client.ReplicationControllerInterface,
 	return matchingRCs, nil
 }
 
+func printDaemonControllersByLabels(matchingDCs []api.DaemonController) string {
+	// Format the matching RC's into strings.
+	var dcStrings []string
+	for _, controller := range matchingDCs {
+		dcStrings = append(dcStrings, fmt.Sprintf("%s (%d desired, %d nodes scheduled, %d nodes misscheduled)", controller.Name, controller.Status.DesiredNumberScheduled, controller.Status.CurrentNumberScheduled, controller.Status.NumberMisscheduled))
+	}
+
+	list := strings.Join(dcStrings, ", ")
+	if list == "" {
+		return "<none>"
+	}
+	return list
+}
+
 func printReplicationControllersByLabels(matchingRCs []api.ReplicationController) string {
 	// Format the matching RC's into strings.
 	var rcStrings []string
@@ -897,8 +969,8 @@ func printReplicationControllersByLabels(matchingRCs []api.ReplicationController
 	return list
 }
 
-func getPodStatusForReplicationController(c client.PodInterface, controller *api.ReplicationController) (running, waiting, succeeded, failed int, err error) {
-	rcPods, err := c.List(labels.SelectorFromSet(controller.Spec.Selector), fields.Everything())
+func getPodStatusForController(c client.PodInterface, selector map[string]string) (running, waiting, succeeded, failed int, err error) {
+	rcPods, err := c.List(labels.SelectorFromSet(selector), fields.Everything())
 	if err != nil {
 		return
 	}

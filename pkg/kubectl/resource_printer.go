@@ -518,11 +518,12 @@ func printDaemonController(controller *api.DaemonController, w io.Writer, withNa
 	if len(containers) > 0 {
 		firstContainer, containers = containers[0], containers[1:]
 	}
-	_, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+	_, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 		name,
 		firstContainer.Name,
 		firstContainer.Image,
-		formatLabels(controller.Spec.Selector))
+		formatLabels(controller.Spec.Selector),
+		formatLabels(controller.Spec.Template.Spec.NodeSelector))
 	if err != nil {
 		return err
 	}
