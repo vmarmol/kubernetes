@@ -11617,7 +11617,13 @@
    },
    "v1beta3.DaemonControllerSpec": {
     "id": "v1beta3.DaemonControllerSpec",
+    "required": [
+     "selector"
+    ],
     "properties": {
+     "selector": {
+      "type": "any"
+     },
      "template": {
       "$ref": "v1beta3.PodTemplateSpec"
      }
@@ -12373,15 +12379,20 @@
    "v1beta3.DaemonControllerStatus": {
     "id": "v1beta3.DaemonControllerStatus",
     "required": [
-     "nodes_running_daemon",
-     "nodes_should_run_daemon"
+     "currentNumberScheduled",
+     "numberMisscheduled",
+     "desiredNumberScheduled"
     ],
     "properties": {
-     "nodes_running_daemon": {
+     "currentNumberScheduled": {
       "type": "integer",
       "format": "int32"
      },
-     "nodes_should_run_daemon": {
+     "numberMisscheduled": {
+      "type": "integer",
+      "format": "int32"
+     },
+     "desiredNumberScheduled": {
       "type": "integer",
       "format": "int32"
      }

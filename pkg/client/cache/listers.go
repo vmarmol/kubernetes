@@ -248,6 +248,7 @@ func (s *StoreToDaemonControllerLister) List() (controllers []api.DaemonControll
 	return controllers, nil
 }
 
+// GetPodDaemonController returns a list of daemon controllers managing a pod. Returns an error iff no matching controllers are found.
 func (s *StoreToDaemonControllerLister) GetPodDaemonController(pod *api.Pod) (controllers []api.DaemonController, err error) {
 	var selector labels.Selector
 	var dc api.DaemonController

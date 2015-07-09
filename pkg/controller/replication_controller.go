@@ -99,8 +99,8 @@ func NewReplicationManager(kubeClient client.Interface, burstReplicas int) *Repl
 	rm := &ReplicationManager{
 		kubeClient: kubeClient,
 		podControl: RealPodControl{
-			kubeClient: kubeClient,
-			recorder:   eventBroadcaster.NewRecorder(api.EventSource{Component: "replication-controller"}),
+			KubeClient: kubeClient,
+			Recorder:   eventBroadcaster.NewRecorder(api.EventSource{Component: "replication-controller"}),
 		},
 		burstReplicas: burstReplicas,
 		expectations:  NewControllerExpectations(),
@@ -202,9 +202,10 @@ func (rm *ReplicationManager) getPodControllers(pod *api.Pod) *api.ReplicationCo
 func (rm *ReplicationManager) addPod(obj interface{}) {
 	pod := obj.(*api.Pod)
 	if rc := rm.getPodControllers(pod); rc != nil {
-		rcKey, err := controllerKeyFunc(rc)
+		rcKey, err := KeyFunc(rc)
 		if err != nil {
 			glog.Errorf("Couldn't get key for replication controller %+v: %v", rc, err)
+			return
 		}
 		rm.expectations.CreationObserved(rcKey)
 		rm.enqueueController(rc)
@@ -257,9 +258,10 @@ func (rm *ReplicationManager) deletePod(obj interface{}) {
 		}
 	}
 	if rc := rm.getPodControllers(pod); rc != nil {
-		rcKey, err := controllerKeyFunc(rc)
+		rcKey, err := KeyFunc(rc)
 		if err != nil {
 			glog.Errorf("Couldn't get key for replication controller %+v: %v", rc, err)
+			return
 		}
 		rm.expectations.DeletionObserved(rcKey)
 		rm.enqueueController(rc)
@@ -268,7 +270,7 @@ func (rm *ReplicationManager) deletePod(obj interface{}) {
 
 // obj could be an *api.ReplicationController, or a DeletionFinalStateUnknown marker item.
 func (rm *ReplicationManager) enqueueController(obj interface{}) {
-	key, err := controllerKeyFunc(obj)
+	key, err := KeyFunc(obj)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
@@ -281,26 +283,26 @@ func (rm *ReplicationManager) enqueueController(obj interface{}) {
 // It enforces that the syncHandler is never invoked concurrently with the same key.
 func (rm *ReplicationManager) worker() {
 	for {
-		func() {
-			key, quit := rm.queue.Get()
-			if quit {
-				return
-			}
-			defer rm.queue.Done(key)
-			err := rm.syncHandler(key.(string))
-			if err != nil {
-				glog.Errorf("Error syncing replication controller: %v", err)
-			}
-		}()
+		key, quit := rm.queue.Get()
+		if quit {
+			rm.queue.Done(key)
+			return
+		}
+		err := rm.syncHandler(key.(string))
+		if err != nil {
+			glog.Errorf("Error syncing replication controller: %v", err)
+		}
+		rm.queue.Done(key)
 	}
 }
 
 // manageReplicas checks and updates replicas for the given replication controller.
 func (rm *ReplicationManager) manageReplicas(filteredPods []*api.Pod, controller *api.ReplicationController) {
 	diff := len(filteredPods) - controller.Spec.Replicas
-	rcKey, err := controllerKeyFunc(controller)
+	rcKey, err := KeyFunc(controller)
 	if err != nil {
 		glog.Errorf("Couldn't get key for replication controller %+v: %v", controller, err)
+		return
 	}
 	if diff < 0 {
 		diff *= -1
@@ -314,7 +316,7 @@ func (rm *ReplicationManager) manageReplicas(filteredPods []*api.Pod, controller
 		for i := 0; i < diff; i++ {
 			go func() {
 				defer wait.Done()
-				if err := rm.podControl.createReplica(controller.Namespace, controller); err != nil {
+				if err := rm.podControl.CreateReplica(controller.Namespace, controller); err != nil {
 					// Decrement the expected number of creates because the informer won't observe this pod
 					glog.V(2).Infof("Failed creation, decrementing expectations for controller %q/%q", controller.Namespace, controller.Name)
 					rm.expectations.CreationObserved(rcKey)
@@ -342,7 +344,7 @@ func (rm *ReplicationManager) manageReplicas(filteredPods []*api.Pod, controller
 		for i := 0; i < diff; i++ {
 			go func(ix int) {
 				defer wait.Done()
-				if err := rm.podControl.deletePod(controller.Namespace, filteredPods[ix].Name); err != nil {
+				if err := rm.podControl.DeletePod(controller.Namespace, filteredPods[ix].Name); err != nil {
 					// Decrement the expected number of deletes because the informer won't observe this deletion
 					glog.V(2).Infof("Failed deletion, decrementing expectations for controller %q/%q", controller.Namespace, controller.Name)
 					rm.expectations.DeletionObserved(rcKey)
@@ -378,9 +380,10 @@ func (rm *ReplicationManager) syncReplicationController(key string) error {
 	// Check the expectations of the rc before counting active pods, otherwise a new pod can sneak in
 	// and update the expectations after we've retrieved active pods from the store. If a new pod enters
 	// the store after we've checked the expectation, the rc sync is just deferred till the next relist.
-	rcKey, err := controllerKeyFunc(&controller)
+	rcKey, err := KeyFunc(&controller)
 	if err != nil {
 		glog.Errorf("Couldn't get key for replication controller %+v: %v", controller, err)
+		return err
 	}
 	rcNeedsSync := rm.expectations.SatisfiedExpectations(rcKey)
 	podList, err := rm.podStore.Pods(controller.Namespace).List(labels.Set(controller.Spec.Selector).AsSelector())

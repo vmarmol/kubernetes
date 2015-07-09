@@ -38,7 +38,7 @@ const (
 )
 
 var (
-	controllerKeyFunc = framework.DeletionHandlingMetaNamespaceKeyFunc
+	KeyFunc = framework.DeletionHandlingMetaNamespaceKeyFunc
 )
 
 // Expectations are a way for controllers to tell the controller manager what they expect. eg:
@@ -197,18 +197,18 @@ func NewControllerExpectations() *ControllerExpectations {
 // PodControlInterface is an interface that knows how to add or delete pods
 // created as an interface to allow testing.
 type PodControlInterface interface {
-	// createReplica creates new replicated pods according to the spec.
-	createReplica(namespace string, controller *api.ReplicationController) error
-	// createReplicaOnNodes creates a new pod according to the spec, on a specified list of nodes.
-	createReplicaOnNode(namespace string, controller *api.DaemonController, nodeNames string) error
-	// deletePod deletes the pod identified by podID.
-	deletePod(namespace string, podID string) error
+	// CreateReplica creates new replicated pods according to the spec.
+	CreateReplica(namespace string, controller *api.ReplicationController) error
+	// CreateReplicaOnNodes creates a new pod according to the spec, on a specified list of nodes.
+	CreateReplicaOnNode(namespace string, controller *api.DaemonController, nodeNames string) error
+	// DeletePod deletes the pod identified by podID.
+	DeletePod(namespace string, podID string) error
 }
 
 // RealPodControl is the default implementation of PodControllerInterface.
 type RealPodControl struct {
-	kubeClient client.Interface
-	recorder   record.EventRecorder
+	KubeClient client.Interface
+	Recorder   record.EventRecorder
 }
 
 func getReplicaLabelSet(template *api.PodTemplateSpec) labels.Set {
@@ -247,7 +247,7 @@ func getReplicaPrefix(controllerName string) string {
 	return prefix
 }
 
-func (r RealPodControl) createReplica(namespace string, controller *api.ReplicationController) error {
+func (r RealPodControl) CreateReplica(namespace string, controller *api.ReplicationController) error {
 	desiredLabels := getReplicaLabelSet(controller.Spec.Template)
 	desiredAnnotations, err := getReplicaAnnotationSet(controller.Spec.Template, controller)
 	if err != nil {
@@ -268,17 +268,17 @@ func (r RealPodControl) createReplica(namespace string, controller *api.Replicat
 	if labels.Set(pod.Labels).AsSelector().Empty() {
 		return fmt.Errorf("unable to create pod replica, no labels")
 	}
-	if newPod, err := r.kubeClient.Pods(namespace).Create(pod); err != nil {
-		r.recorder.Eventf(controller, "failedCreate", "Error creating: %v", err)
+	if newPod, err := r.KubeClient.Pods(namespace).Create(pod); err != nil {
+		r.Recorder.Eventf(controller, "failedCreate", "Error creating: %v", err)
 		return fmt.Errorf("unable to create pod replica: %v", err)
 	} else {
 		glog.V(4).Infof("Controller %v created pod %v", controller.Name, newPod.Name)
-		r.recorder.Eventf(controller, "successfulCreate", "Created pod: %v", newPod.Name)
+		r.Recorder.Eventf(controller, "successfulCreate", "Created pod: %v", newPod.Name)
 	}
 	return nil
 }
 
-func (r RealPodControl) createReplicaOnNode(namespace string, controller *api.DaemonController, nodeName string) error {
+func (r RealPodControl) CreateReplicaOnNode(namespace string, controller *api.DaemonController, nodeName string) error {
 	desiredLabels := getReplicaLabelSet(controller.Spec.Template)
 	desiredAnnotations, err := getReplicaAnnotationSet(controller.Spec.Template, controller)
 	if err != nil {
@@ -300,19 +300,19 @@ func (r RealPodControl) createReplicaOnNode(namespace string, controller *api.Da
 		return fmt.Errorf("unable to create pod replica, no labels")
 	}
 	pod.Spec.NodeName = nodeName
-	if newPod, err := r.kubeClient.Pods(namespace).Create(pod); err != nil {
-		r.recorder.Eventf(controller, "failedCreate", "Error creating: %v", err)
+	if newPod, err := r.KubeClient.Pods(namespace).Create(pod); err != nil {
+		r.Recorder.Eventf(controller, "failedCreate", "Error creating: %v", err)
 		return fmt.Errorf("unable to create pod replica: %v", err)
 	} else {
 		glog.V(4).Infof("Controller %v created pod %v", controller.Name, newPod.Name)
-		r.recorder.Eventf(controller, "successfulCreate", "Created pod: %v", newPod.Name)
+		r.Recorder.Eventf(controller, "successfulCreate", "Created pod: %v", newPod.Name)
 	}
 
 	return nil
 }
 
-func (r RealPodControl) deletePod(namespace, podID string) error {
-	return r.kubeClient.Pods(namespace).Delete(podID, nil)
+func (r RealPodControl) DeletePod(namespace, podID string) error {
+	return r.KubeClient.Pods(namespace).Delete(podID, nil)
 }
 
 // activePods type allows custom sorting of pods so an rc can pick the best ones to delete.
@@ -374,29 +374,4 @@ func updateReplicaCount(rcClient client.ReplicationControllerInterface, controll
 	}
 	// Failed 2 updates one of which was with the latest controller, return the update error
 	return
-}
-
-func storeDaemonStatus(dcClient client.DaemonControllerInterface, dc *api.DaemonController, desiredNumberScheduled, currentNumberScheduled, numberMisscheduled int) error {
-	if dc.Status.DesiredNumberScheduled == desiredNumberScheduled && dc.Status.CurrentNumberScheduled == currentNumberScheduled && dc.Status.NumberMisscheduled == numberMisscheduled {
-		return nil
-	}
-
-	var updateErr, getErr error
-	for i := 0; i <= updateRetries; i++ {
-		dc.Status.DesiredNumberScheduled = desiredNumberScheduled
-		dc.Status.CurrentNumberScheduled = currentNumberScheduled
-		dc.Status.NumberMisscheduled = numberMisscheduled
-		_, updateErr := dcClient.Update(dc)
-		if updateErr == nil {
-			return updateErr
-		}
-		// Update the controller with the latest resource version for the next poll
-		if dc, getErr = dcClient.Get(dc.Name); getErr != nil {
-			// If the GET fails we can't trust status.Replicas anymore. This error
-			// is bound to be more interesting than the update failure.
-			return getErr
-		}
-	}
-	// Failed 2 updates one of which was with the latest controller, return the update error
-	return updateErr
 }

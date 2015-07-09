@@ -38,6 +38,7 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/cloudprovider/routecontroller"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/cloudprovider/servicecontroller"
 	controllerPkg "github.com/GoogleCloudPlatform/kubernetes/pkg/controller"
+	"github.com/GoogleCloudPlatform/kubernetes/pkg/controller/daemon"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/healthz"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/master/ports"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/namespace"
@@ -206,7 +207,7 @@ func (s *CMServer) Run(_ []string) error {
 	controllerManager := controllerPkg.NewReplicationManager(kubeClient, controllerPkg.BurstReplicas)
 	go controllerManager.Run(s.ConcurrentRCSyncs, util.NeverStop)
 
-	daemonManager := controllerPkg.NewDaemonManager(kubeClient)
+	daemonManager := daemon.NewDaemonManager(kubeClient)
 	go daemonManager.Run(s.ConcurrentDCSyncs, util.NeverStop)
 
 	cloud := cloudprovider.InitCloudProvider(s.CloudProvider, s.CloudConfigFile)

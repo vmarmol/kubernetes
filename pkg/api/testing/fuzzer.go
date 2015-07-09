@@ -109,17 +109,8 @@ func FuzzerFor(t *testing.T, version string, src rand.Source) *fuzz.Fuzzer {
 			c.FuzzNoCustom(j) // fuzz self without calling this function again
 			//j.TemplateRef = nil // this is required for round trip
 		},
-		func(j *api.ReplicationControllerStatus, c fuzz.Continue) {
-			// only replicas round trips
-			j.Replicas = int(c.RandUint64())
-		},
 		func(j *api.DaemonControllerSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(j) // fuzz self without calling this function again
-		},
-		func(j *api.DaemonControllerStatus, c fuzz.Continue) {
-			j.CurrentNumberScheduled = int(c.RandUint64())
-			j.NumberMisscheduled = int(c.RandUint64())
-			j.DesiredNumberScheduled = int(c.RandUint64())
 		},
 		func(j *api.List, c fuzz.Continue) {
 			c.FuzzNoCustom(j) // fuzz self without calling this function again

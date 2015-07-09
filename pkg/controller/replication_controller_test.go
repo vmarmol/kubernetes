@@ -59,7 +59,7 @@ func init() {
 	api.ForTesting_ReferencesAllowBlankSelfLinks = true
 }
 
-func (f *FakePodControl) createReplica(namespace string, spec *api.ReplicationController) error {
+func (f *FakePodControl) CreateReplica(namespace string, spec *api.ReplicationController) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	if f.err != nil {
@@ -69,7 +69,7 @@ func (f *FakePodControl) createReplica(namespace string, spec *api.ReplicationCo
 	return nil
 }
 
-func (f *FakePodControl) createReplicaOnNode(namespace string, controller *api.DaemonController, nodeName string) error {
+func (f *FakePodControl) CreateReplicaOnNode(namespace string, controller *api.DaemonController, nodeName string) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	if f.err != nil {
@@ -79,7 +79,7 @@ func (f *FakePodControl) createReplicaOnNode(namespace string, controller *api.D
 	return nil
 }
 
-func (f *FakePodControl) deletePod(namespace string, podName string) error {
+func (f *FakePodControl) DeletePod(namespace string, podName string) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	if f.err != nil {
@@ -97,7 +97,7 @@ func (f *FakePodControl) clear() {
 }
 
 func getKey(rc *api.ReplicationController, t *testing.T) string {
-	if key, err := controllerKeyFunc(rc); err != nil {
+	if key, err := KeyFunc(rc); err != nil {
 		t.Errorf("Unexpected error getting key for rc %v: %v", rc.Name, err)
 		return ""
 	} else {
@@ -318,14 +318,14 @@ func TestCreateReplica(t *testing.T) {
 	client := client.NewOrDie(&client.Config{Host: testServer.URL, Version: testapi.Version()})
 
 	podControl := RealPodControl{
-		kubeClient: client,
-		recorder:   &record.FakeRecorder{},
+		KubeClient: client,
+		Recorder:   &record.FakeRecorder{},
 	}
 
 	controllerSpec := newReplicationController(1)
 
-	// Make sure createReplica sends a POST to the apiserver with a pod from the controllers pod template
-	podControl.createReplica(ns, controllerSpec)
+	// Make sure CreateReplica sends a POST to the apiserver with a pod from the controllers pod template
+	podControl.CreateReplica(ns, controllerSpec)
 
 	manifest := api.ContainerManifest{}
 	if err := api.Scheme.Convert(&controllerSpec.Spec.Template.Spec, &manifest); err != nil {
@@ -505,7 +505,7 @@ func TestControllerExpectations(t *testing.T) {
 	rc := newReplicationController(1)
 
 	// RC fires off adds and deletes at apiserver, then sets expectations
-	rcKey, err := controllerKeyFunc(rc)
+	rcKey, err := KeyFunc(rc)
 	if err != nil {
 		t.Errorf("Couldn't get key for object %+v: %v", rc, err)
 	}
@@ -596,7 +596,7 @@ func TestSyncReplicationControllerDormancy(t *testing.T) {
 	validateSyncReplication(t, &fakePodControl, 0, 0)
 
 	// Get the key for the controller
-	rcKey, err := controllerKeyFunc(controllerSpec)
+	rcKey, err := KeyFunc(controllerSpec)
 	if err != nil {
 		t.Errorf("Couldn't get key for object %+v: %v", controllerSpec, err)
 	}
@@ -915,7 +915,7 @@ func doTestControllerBurstReplicas(t *testing.T, burstReplicas, numReplicas int)
 	expectedPods := 0
 	pods := newPodList(nil, numReplicas, api.PodPending, controllerSpec)
 
-	rcKey, err := controllerKeyFunc(controllerSpec)
+	rcKey, err := KeyFunc(controllerSpec)
 	if err != nil {
 		t.Errorf("Couldn't get key for object %+v: %v", controllerSpec, err)
 	}
@@ -1062,7 +1062,7 @@ func TestDeleteControllerAndExpectations(t *testing.T) {
 	fakePodControl.clear()
 
 	// Get the RC key
-	rcKey, err := controllerKeyFunc(rc)
+	rcKey, err := KeyFunc(rc)
 	if err != nil {
 		t.Errorf("Couldn't get key for object %+v: %v", rc, err)
 	}

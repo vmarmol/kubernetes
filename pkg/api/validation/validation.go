@@ -272,7 +272,6 @@ func ValidateObjectMetaUpdate(new, old *api.ObjectMeta) errs.ValidationErrorList
 	if old.Namespace != new.Namespace {
 		allErrs = append(allErrs, errs.NewFieldInvalid("namespace", new.Namespace, "field is immutable"))
 	}
-	glog.Infoln("UID mystery", old.UID, new.UID, old.UID == new.UID)
 	if old.UID != new.UID {
 		allErrs = append(allErrs, errs.NewFieldInvalid("uid", new.UID, "field is immutable"))
 	}
