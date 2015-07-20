@@ -41,7 +41,6 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/client/cache"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/client/record"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/cloudprovider"
-	"github.com/GoogleCloudPlatform/kubernetes/pkg/fieldpath"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/fields"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/kubelet/cadvisor"
 	kubecontainer "github.com/GoogleCloudPlatform/kubernetes/pkg/kubelet/container"
@@ -1019,7 +1018,7 @@ func (kl *Kubelet) makeEnvironmentVariables(pod *api.Pod, container *api.Contain
 			runtimeVal = expansion.Expand(runtimeVal, mappingFunc)
 		} else if envVar.ValueFrom != nil && envVar.ValueFrom.FieldRef != nil {
 			// Step 1b: resolve alternate env var sources
-			runtimeVal, err = kl.podFieldSelectorRuntimeValue(envVar.ValueFrom.FieldRef, pod)
+			runtimeVal, err = podFieldSelectorRuntimeValue(envVar.ValueFrom.FieldRef, pod)
 			if err != nil {
 				return result, err
 			}
@@ -1034,15 +1033,6 @@ func (kl *Kubelet) makeEnvironmentVariables(pod *api.Pod, container *api.Contain
 		result = append(result, kubecontainer.EnvVar{Name: k, Value: v})
 	}
 	return result, nil
-}
-
-func (kl *Kubelet) podFieldSelectorRuntimeValue(fs *api.ObjectFieldSelector, pod *api.Pod) (string, error) {
-	internalFieldPath, _, err := api.Scheme.ConvertFieldLabel(fs.APIVersion, "Pod", fs.FieldPath, "")
-	if err != nil {
-		return "", err
-	}
-
-	return fieldpath.ExtractFieldPathAsString(pod, internalFieldPath)
 }
 
 // getClusterDNS returns a list of the DNS servers and a list of the DNS search
@@ -1286,19 +1276,6 @@ func (kl *Kubelet) getPullSecretsForPod(pod *api.Pod) ([]api.Secret, error) {
 	return pullSecrets, nil
 }
 
-// Stores all volumes defined by the set of pods into a map.
-// Keys for each entry are in the format (POD_ID)/(VOLUME_NAME)
-func getDesiredVolumes(pods []*api.Pod) map[string]api.Volume {
-	desiredVolumes := make(map[string]api.Volume)
-	for _, pod := range pods {
-		for _, volume := range pod.Spec.Volumes {
-			identifier := path.Join(string(pod.UID), volume.Name)
-			desiredVolumes[identifier] = volume
-		}
-	}
-	return desiredVolumes
-}
-
 func (kl *Kubelet) cleanupOrphanedPodDirs(pods []*api.Pod) error {
 	desired := util.NewStringSet()
 	for _, pod := range pods {
@@ -1370,14 +1347,6 @@ func (kl *Kubelet) pastActiveDeadline(pod *api.Pod) bool {
 				return true
 			}
 		}
-	}
-	return false
-}
-
-//podIsTerminated returns true if status is in one of the terminated state.
-func podIsTerminated(status *api.PodStatus) bool {
-	if status.Phase == api.PodFailed || status.Phase == api.PodSucceeded {
-		return true
 	}
 	return false
 }
@@ -1791,14 +1760,6 @@ func (kl *Kubelet) GetContainerRuntimeVersion() (kubecontainer.Version, error) {
 	return kl.containerRuntime.Version()
 }
 
-func (kl *Kubelet) validatePodPhase(podStatus *api.PodStatus) error {
-	switch podStatus.Phase {
-	case api.PodRunning, api.PodSucceeded, api.PodFailed:
-		return nil
-	}
-	return fmt.Errorf("pod is not in 'Running', 'Succeeded' or 'Failed' state - State: %q", podStatus.Phase)
-}
-
 func (kl *Kubelet) validateContainerStatus(podStatus *api.PodStatus, containerName string, previous bool) (containerID string, err error) {
 	var cID string
 
@@ -1832,7 +1793,7 @@ func (kl *Kubelet) GetKubeletContainerLogs(podFullName, containerName, tail stri
 	if !found {
 		return fmt.Errorf("failed to get status for pod %q", podFullName)
 	}
-	if err := kl.validatePodPhase(&podStatus); err != nil {
+	if err := validatePodPhase(&podStatus); err != nil {
 		// No log is available if pod is not in a "known" phase (e.g. Unknown).
 		return err
 	}
@@ -2141,95 +2102,6 @@ func (kl *Kubelet) tryUpdateNodeStatus() error {
 	// Update the current status on the API server
 	_, err = kl.kubeClient.Nodes().UpdateStatus(node)
 	return err
-}
-
-// GetPhase returns the phase of a pod given its container info.
-// This func is exported to simplify integration with 3rd party kubelet
-// integrations like kubernetes-mesos.
-func GetPhase(spec *api.PodSpec, info []api.ContainerStatus) api.PodPhase {
-	running := 0
-	waiting := 0
-	stopped := 0
-	failed := 0
-	succeeded := 0
-	unknown := 0
-	for _, container := range spec.Containers {
-		if containerStatus, ok := api.GetContainerStatus(info, container.Name); ok {
-			if containerStatus.State.Running != nil {
-				running++
-			} else if containerStatus.State.Terminated != nil {
-				stopped++
-				if containerStatus.State.Terminated.ExitCode == 0 {
-					succeeded++
-				} else {
-					failed++
-				}
-			} else if containerStatus.State.Waiting != nil {
-				waiting++
-			} else {
-				unknown++
-			}
-		} else {
-			unknown++
-		}
-	}
-	switch {
-	case waiting > 0:
-		glog.V(5).Infof("pod waiting > 0, pending")
-		// One or more containers has not been started
-		return api.PodPending
-	case running > 0 && unknown == 0:
-		// All containers have been started, and at least
-		// one container is running
-		return api.PodRunning
-	case running == 0 && stopped > 0 && unknown == 0:
-		// All containers are terminated
-		if spec.RestartPolicy == api.RestartPolicyAlways {
-			// All containers are in the process of restarting
-			return api.PodRunning
-		}
-		if stopped == succeeded {
-			// RestartPolicy is not Always, and all
-			// containers are terminated in success
-			return api.PodSucceeded
-		}
-		if spec.RestartPolicy == api.RestartPolicyNever {
-			// RestartPolicy is Never, and all containers are
-			// terminated with at least one in failure
-			return api.PodFailed
-		}
-		// RestartPolicy is OnFailure, and at least one in failure
-		// and in the process of restarting
-		return api.PodRunning
-	default:
-		glog.V(5).Infof("pod default case, pending")
-		return api.PodPending
-	}
-}
-
-// getPodReadyCondition returns ready condition if all containers in a pod are ready, else it returns an unready condition.
-func getPodReadyCondition(spec *api.PodSpec, statuses []api.ContainerStatus) []api.PodCondition {
-	ready := []api.PodCondition{{
-		Type:   api.PodReady,
-		Status: api.ConditionTrue,
-	}}
-	unready := []api.PodCondition{{
-		Type:   api.PodReady,
-		Status: api.ConditionFalse,
-	}}
-	if statuses == nil {
-		return unready
-	}
-	for _, container := range spec.Containers {
-		if containerStatus, ok := api.GetContainerStatus(statuses, container.Name); ok {
-			if !containerStatus.Ready {
-				return unready
-			}
-		} else {
-			return unready
-		}
-	}
-	return ready
 }
 
 // By passing the pod directly, this method avoids pod lookup, which requires
