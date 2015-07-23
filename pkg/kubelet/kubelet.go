@@ -1549,7 +1549,7 @@ func (kl *Kubelet) checkCapacityExceeded(pods []*api.Pod) (fitting []*api.Pod, n
 	sort.Sort(podsByCreationTime(pods))
 
 	capacity := CapacityFromMachineInfo(info)
-	return predicates.CheckPodsExceedingCapacity(pods, capacity)
+	return predicates.CheckPodsExceedingCapacity(pods, capacity, int64(kl.pods))
 }
 
 // handleOutOfDisk detects if pods can't fit due to lack of disk space.
