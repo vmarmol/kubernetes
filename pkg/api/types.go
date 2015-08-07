@@ -1023,21 +1023,30 @@ type ReplicationControllerList struct {
 
 // DaemonControllerSpec is the specification of a daemon controller.
 type DaemonControllerSpec struct {
+	// Selector is a label query over pods that are managed by the daemon controller.
+	Selector map[string]string `json:"selector"`
+
 	// Template is the object that describes the pod that will be created.
-	// The Daemon Controller will create this pod on every node that matches
-	// the template's node selector (or on every node if no node selector is
-	// specified).
+	// The Daemon Controller will create exactly one copy of this pod on every node
+	// that matches the template's node selector (or on every node if no node
+	// selector is specified).
 	Template *PodTemplateSpec `json:"template,omitempty"`
 }
 
 // DaemonControllerStatus represents the current status of a daemon
 // controller.
 type DaemonControllerStatus struct {
-	// NodesRunningDaemon is the number of nodes running the Daemon.
-	NodesRunningDaemon int `json:"nodesRunningDaemon"`
+	// CurrentNumberScheduled is the number of nodes that are supposed to run the daemon.
+	// that are (correctly) running exactly 1 copy of the daemon.
+	CurrentNumberScheduled int `json:"currentNumberScheduled"`
 
-	// NodesShouldRunDaemon is the number of nodes that should be running the Daemon.
-	NodesShouldRunDaemon int `json:"nodesShouldRunDaemon"`
+	// NumberMisscheduled is the number of nodes that are running the Daemon, but are
+	// not supposed to run the daemon.
+	NumberMisscheduled int `json:"numberMisscheduled"`
+
+	// DesiredNumberScheduled is the total number of nodes that should be running the Daemon
+	// (including nodes correctly running the daemon).
+	DesiredNumberScheduled int `json:"desiredNumberScheduled"`
 }
 
 // DaemonController represents the configuration of a daemon controller.
@@ -1947,7 +1956,7 @@ const (
 	// ReplicationControllers, number
 	ResourceReplicationControllers ResourceName = "replicationcontrollers"
 	// DaemonControllers, number
-	ResourceDaemonControllers ResourceName = "daemoncontrollers"
+	ResourceDaemonControllers ResourceName = "daemonControllers"
 	// ResourceQuotas, number
 	ResourceQuotas ResourceName = "resourcequotas"
 	// ResourceSecrets, number

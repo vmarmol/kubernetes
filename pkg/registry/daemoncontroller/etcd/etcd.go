@@ -34,7 +34,7 @@ type REST struct {
 
 // controllerPrefix is the location for controllers in etcd, only exposed
 // for testing
-var controllerPrefix = "/daemoncontrollers"
+var controllerPrefix = "/daemonControllers"
 
 // NewREST returns a RESTStorage object that will work against daemon controllers.
 func NewREST(h tools.EtcdHelper) *REST {

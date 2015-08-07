@@ -227,6 +227,14 @@ func convert_api_DaemonControllerSpec_To_v1beta3_DaemonControllerSpec(in *api.Da
 	if defaulting, found := s.DefaultingInterface(reflect.TypeOf(*in)); found {
 		defaulting.(func(*api.DaemonControllerSpec))(in)
 	}
+	if in.Selector != nil {
+		out.Selector = make(map[string]string)
+		for key, val := range in.Selector {
+			out.Selector[key] = val
+		}
+	} else {
+		out.Selector = nil
+	}
 	if in.Template != nil {
 		out.Template = new(PodTemplateSpec)
 		if err := convert_api_PodTemplateSpec_To_v1beta3_PodTemplateSpec(in.Template, out.Template, s); err != nil {
@@ -242,8 +250,9 @@ func convert_api_DaemonControllerStatus_To_v1beta3_DaemonControllerStatus(in *ap
 	if defaulting, found := s.DefaultingInterface(reflect.TypeOf(*in)); found {
 		defaulting.(func(*api.DaemonControllerStatus))(in)
 	}
-	out.NodesRunningDaemon = in.NodesRunningDaemon
-	out.NodesShouldRunDaemon = in.NodesShouldRunDaemon
+	out.CurrentNumberScheduled = in.CurrentNumberScheduled
+	out.NumberMisscheduled = in.NumberMisscheduled
+	out.DesiredNumberScheduled = in.DesiredNumberScheduled
 	return nil
 }
 
@@ -2355,6 +2364,14 @@ func convert_v1beta3_DaemonControllerSpec_To_api_DaemonControllerSpec(in *Daemon
 	if defaulting, found := s.DefaultingInterface(reflect.TypeOf(*in)); found {
 		defaulting.(func(*DaemonControllerSpec))(in)
 	}
+	if in.Selector != nil {
+		out.Selector = make(map[string]string)
+		for key, val := range in.Selector {
+			out.Selector[key] = val
+		}
+	} else {
+		out.Selector = nil
+	}
 	if in.Template != nil {
 		out.Template = new(api.PodTemplateSpec)
 		if err := convert_v1beta3_PodTemplateSpec_To_api_PodTemplateSpec(in.Template, out.Template, s); err != nil {
@@ -2370,8 +2387,9 @@ func convert_v1beta3_DaemonControllerStatus_To_api_DaemonControllerStatus(in *Da
 	if defaulting, found := s.DefaultingInterface(reflect.TypeOf(*in)); found {
 		defaulting.(func(*DaemonControllerStatus))(in)
 	}
-	out.NodesRunningDaemon = in.NodesRunningDaemon
-	out.NodesShouldRunDaemon = in.NodesShouldRunDaemon
+	out.CurrentNumberScheduled = in.CurrentNumberScheduled
+	out.NumberMisscheduled = in.NumberMisscheduled
+	out.DesiredNumberScheduled = in.DesiredNumberScheduled
 	return nil
 }
 

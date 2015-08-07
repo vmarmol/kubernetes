@@ -51,6 +51,9 @@ func addDefaultingFuncs() {
 			}
 			// TODO: support templates defined elsewhere when we support them in the API
 			if labels != nil {
+				if len(obj.Spec.Selector) == 0 {
+					obj.Spec.Selector = labels
+				}
 				if len(obj.Labels) == 0 {
 					obj.Labels = labels
 				}

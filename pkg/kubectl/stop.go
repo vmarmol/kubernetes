@@ -23,6 +23,10 @@ import (
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/api"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/api/meta"
 	"github.com/GoogleCloudPlatform/kubernetes/pkg/client"
+	"github.com/GoogleCloudPlatform/kubernetes/pkg/fields"
+	"github.com/GoogleCloudPlatform/kubernetes/pkg/labels"
+	"github.com/GoogleCloudPlatform/kubernetes/pkg/util/wait"
+	"github.com/google/gofuzz"
 )
 
 const (
@@ -54,6 +58,8 @@ func ReaperFor(kind string, c client.Interface) (Reaper, error) {
 	switch kind {
 	case "ReplicationController":
 		return &ReplicationControllerReaper{c, Interval, Timeout}, nil
+	case "DaemonController":
+		return &DaemonControllerReaper{c, Interval, Timeout}, nil
 	case "Pod":
 		return &PodReaper{c}, nil
 	case "Service":
@@ -67,6 +73,10 @@ func ReaperForReplicationController(c client.Interface, timeout time.Duration) (
 }
 
 type ReplicationControllerReaper struct {
+	client.Interface
+	pollInterval, timeout time.Duration
+}
+type DaemonControllerReaper struct {
 	client.Interface
 	pollInterval, timeout time.Duration
 }
@@ -101,6 +111,62 @@ func (reaper *ReplicationControllerReaper) Stop(namespace, name string, timeout 
 		return "", err
 	}
 	if err := rc.Delete(name); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s stopped", name), nil
+}
+
+func (reaper *DaemonControllerReaper) Stop(namespace, name string, timeout time.Duration, gracePeriod *api.DeleteOptions) (string, error) {
+	// Retrieve the daemon we want to stop.
+	daemonClient := reaper.DaemonControllers(namespace)
+	dc, err := daemonClient.Get(name)
+	if err != nil {
+		return "", err
+	}
+
+	// Update the daemon to select for a non-existent NodeName.
+	// The daemon manager will then kill all the daemon pods corresponding to daemon dc.
+	nodes, err := reaper.Nodes().List(labels.Everything(), fields.Everything())
+	if err != nil {
+		return "", err
+	}
+	var fuzzer = fuzz.New()
+	var nameExists bool
+	numRetries := 1
+	for try := 0; try <= numRetries; try++ {
+		var nodeName string
+		fuzzer.Fuzz(&nodeName)
+		nameExists = false
+		for _, node := range nodes.Items {
+			nameExists = nameExists || node.Name == nodeName
+		}
+		if !nameExists {
+			dc.Spec.Template.Spec.NodeName = nodeName
+			break
+		}
+	}
+	if nameExists {
+		// Probability of reaching here is extremely low, most likely indicates a programming bug/library error.
+		return "", fmt.Errorf("Failed to stop node.")
+	}
+	daemonClient.Update(dc)
+
+	// Wait for the daemon manager to kill all the daemon's daemon pods.
+	daemonPodsKilled := func() (bool, error) {
+		updatedDc, err := daemonClient.Get(name)
+		if err != nil {
+			// We don't return an error, because returning an error will abort wait.Poll, but
+			// if there's an error, we want to try getting the daemon again.
+			return false, nil
+		}
+		return updatedDc.Status.CurrentNumberScheduled == 0, nil
+	}
+	if err := wait.Poll(reaper.pollInterval, reaper.timeout, daemonPodsKilled); err != nil {
+		return "", err
+	}
+
+	// Finally, kill the daemon.
+	if err := daemonClient.Delete(name); err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%s stopped", name), nil

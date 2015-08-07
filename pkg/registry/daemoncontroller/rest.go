@@ -51,9 +51,7 @@ func (dcStrategy) PrepareForCreate(obj runtime.Object) {
 
 // PrepareForUpdate clears fields that are not allowed to be set by end users on update.
 func (dcStrategy) PrepareForUpdate(obj, old runtime.Object) {
-	newController := obj.(*api.DaemonController)
-	oldController := old.(*api.DaemonController)
-	newController.Status = oldController.Status
+
 }
 
 // Validate validates a new daemon controller.
@@ -78,9 +76,10 @@ func (dcStrategy) ValidateUpdate(ctx api.Context, obj, old runtime.Object) field
 // ControllerToSelectableFields returns a label set that represents the object.
 func ControllerToSelectableFields(controller *api.DaemonController) fields.Set {
 	return fields.Set{
-		"metadata.name":               controller.Name,
-		"status.nodesRunningDaemon":   strconv.Itoa(controller.Status.NodesRunningDaemon),
-		"status.nodesShouldRunDaemon": strconv.Itoa(controller.Status.NodesShouldRunDaemon),
+		"metadata.name":                 controller.Name,
+		"status.currentNumberScheduled": strconv.Itoa(controller.Status.CurrentNumberScheduled),
+		"status.numberMisscheduled":     strconv.Itoa(controller.Status.NumberMisscheduled),
+		"status.desiredNumberScheduled": strconv.Itoa(controller.Status.DesiredNumberScheduled),
 	}
 }
 

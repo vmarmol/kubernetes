@@ -85,6 +85,7 @@ var validPodTemplate = api.PodTemplate{
 }
 
 var validControllerSpec = api.DaemonControllerSpec{
+	Selector: validPodTemplate.Template.Labels,
 	Template: &validPodTemplate.Template,
 }
 
@@ -166,6 +167,7 @@ func TestCreateControllerWithGeneratedName(t *testing.T) {
 			GenerateName: "dc-",
 		},
 		Spec: api.DaemonControllerSpec{
+			Selector: map[string]string{"a": "b"},
 			Template: &validPodTemplate.Template,
 		},
 	}
@@ -239,6 +241,10 @@ func TestEtcdControllerValidatesUpdate(t *testing.T) {
 		},
 		func(dc api.DaemonController) (runtime.Object, bool, error) {
 			dc.Spec.Template.Spec.RestartPolicy = api.RestartPolicyOnFailure
+			return storage.Update(ctx, &dc)
+		},
+		func(dc api.DaemonController) (runtime.Object, bool, error) {
+			dc.Spec.Selector = map[string]string{}
 			return storage.Update(ctx, &dc)
 		},
 	}
@@ -509,11 +515,8 @@ func TestEtcdWatchControllersMatch(t *testing.T) {
 	storage, fakeClient := newStorage(t)
 	fakeClient.ExpectNotFoundGet(etcdgeneric.NamespaceKeyRootFunc(ctx, "/registry/pods"))
 
-	controllerLabels := map[string]string{
-		"name": "example_dc",
-	}
 	watching, err := storage.Watch(ctx,
-		labels.SelectorFromSet(controllerLabels),
+		labels.SelectorFromSet(validController.Spec.Selector),
 		fields.Everything(),
 		"1",
 	)
@@ -528,7 +531,7 @@ func TestEtcdWatchControllersMatch(t *testing.T) {
 	controller := &api.DaemonController{
 		ObjectMeta: api.ObjectMeta{
 			Name:      "foo",
-			Labels:    controllerLabels,
+			Labels:    validController.Spec.Selector,
 			Namespace: "default",
 		},
 	}
@@ -558,22 +561,28 @@ func TestEtcdWatchControllersFields(t *testing.T) {
 
 	testFieldMap := map[int][]fields.Set{
 		PASS: {
-			{"status.nodesRunningDaemon": "0"},
-			{"status.nodesShouldRunDaemon": "2"},
+			{"status.currentNumberScheduled": "2"},
+			{"status.numberMisscheduled": "1"},
+			{"status.desiredNumberScheduled": "4"},
 			{"metadata.name": "foo"},
-			{"status.nodesRunningDaemon": "0", "status.nodesShouldRunDaemon": "2"},
-			{"status.nodesRunningDaemon": "0", "metadata.name": "foo"},
-			{"status.nodesShouldRunDaemon": "2", "metadata.name": "foo"},
-			{"status.nodesRunningDaemon": "0", "status.nodesShouldRunDaemon": "2", "metadata.name": "foo"},
+			{"status.currentNumberScheduled": "2", "status.numberMisscheduled": "1"},
+			{"status.currentNumberScheduled": "2", "status.desiredNumberScheduled": "4"},
+			{"status.currentNumberScheduled": "2", "metadata.name": "foo"},
+			{"status.desiredNumberScheduled": "4", "metadata.name": "foo"},
+			{"status.currentNumberScheduled": "2", "status.desiredNumberScheduled": "4", "metadata.name": "foo"},
+			{"status.currentNumberScheduled": "2", "status.numberMisscheduled": "1", "status.desiredNumberScheduled": "4"},
+			{"status.currentNumberScheduled": "2", "status.numberMisscheduled": "1", "status.desiredNumberScheduled": "4", "metadata.name": "foo"},
 		},
 		FAIL: {
-			{"status.nodesRunningDaemon": "1"},
-			{"status.nodesShouldRunDaemon": "1"},
+			{"status.currentNumberScheduled": "1"},
+			{"status.numberMisscheduled": "0"},
+			{"status.desiredNumberScheduled": "5"},
 			{"metadata.name": "bar"},
 			{"name": "foo"},
-			{"status.replicas": "5"},
-			{"status.nodesRunningDaemon": "0", "status.nodesShouldRunDaemon": "3"},
-			{"status.nodesRunningDaemon": "0", "status.nodesShouldRunDaemon": "2", "metadata.name": "foox"},
+			{"status.replicas": "0"},
+			{"status.currentNumberScheduled": "2", "status.desiredNumberScheduled": "3"},
+			{"status.numberMisscheduled": "3", "status.desiredNumberScheduled": "5"},
+			{"status.currentNumberScheduled": "2", "status.desiredNumberScheduled": "4", "metadata.name": "foox"},
 		},
 	}
 	testEtcdActions := []string{
@@ -585,11 +594,13 @@ func TestEtcdWatchControllersFields(t *testing.T) {
 	controller := &api.DaemonController{
 		ObjectMeta: api.ObjectMeta{
 			Name:      "foo",
+			Labels:    validController.Spec.Selector,
 			Namespace: "default",
 		},
 		Status: api.DaemonControllerStatus{
-			NodesRunningDaemon:   0,
-			NodesShouldRunDaemon: 2,
+			CurrentNumberScheduled: 2,
+			NumberMisscheduled:     1,
+			DesiredNumberScheduled: 4,
 		},
 	}
 	controllerBytes, _ := latest.Codec.Encode(controller)
@@ -684,12 +695,14 @@ func TestCreate(t *testing.T) {
 		// valid
 		&api.DaemonController{
 			Spec: api.DaemonControllerSpec{
+				Selector: map[string]string{"a": "b"},
 				Template: &validPodTemplate.Template,
 			},
 		},
 		// invalid
 		&api.DaemonController{
 			Spec: api.DaemonControllerSpec{
+				Selector: map[string]string{},
 				Template: &validPodTemplate.Template,
 			},
 		},

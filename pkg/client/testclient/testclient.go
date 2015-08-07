@@ -79,6 +79,10 @@ func (c *Fake) ReplicationControllers(namespace string) client.ReplicationContro
 	return &FakeReplicationControllers{Fake: c, Namespace: namespace}
 }
 
+func (c *Fake) DaemonControllers(namespace string) client.DaemonControllerInterface {
+	return &FakeDaemonControllers{Fake: c, Namespace: namespace}
+}
+
 func (c *Fake) Nodes() client.NodeInterface {
 	return &FakeNodes{Fake: c}
 }
@@ -89,6 +93,7 @@ func (c *Fake) Events(namespace string) client.EventInterface {
 
 func (c *Fake) Endpoints(namespace string) client.EndpointsInterface {
 	return &FakeEndpoints{Fake: c, Namespace: namespace}
+
 }
 
 func (c *Fake) PersistentVolumes() client.PersistentVolumeInterface {
